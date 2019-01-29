@@ -1,0 +1,56 @@
+/* Macro */
+#include "stringutils.h"
+#include <stdarg.h>
+#include <stdio.h>
+
+/* Proto */
+static void calclen ( string * );
+
+/* Local scope */
+static void
+calclen ( string * str )
+{
+	size_t i = 0;
+	for ( ; str->s[i] != '\0'; ++i )
+		str->length = i;
+}
+
+/* Global scope */
+void
+newstring ( string * str, size_t size )
+{
+	str->bytes = size;
+	str->length = 0;
+	str->s = malloc(str->bytes);
+	str->s[0] = '\0';
+}
+
+string *
+construct_string ( size_t size )
+{
+	string * str = malloc(sizeof(string));
+	str->bytes = size;
+	str->length = 0;
+	str->s = malloc(str->bytes);
+	str->s[0] = '\0';
+
+	return str;
+}
+
+void
+free_string ( string * str )
+{
+	free(str->s);
+	free(str);
+}
+
+void
+stringset ( string * str, const char * fmt, ... )
+{
+	va_list args;
+	va_start( args, fmt );
+	vsnprintf( str->s, str->bytes, fmt, args );
+	va_end(args);
+
+	calclen(str);
+}
