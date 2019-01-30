@@ -11,5 +11,6 @@ main ( void )
 
 	puts("oi");
 
+	C_finish();
 	return EXIT_SUCCESS;
 }
