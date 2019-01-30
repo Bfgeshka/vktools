@@ -12,6 +12,5 @@
 #define PERMISSIONS "video,docs,photos,offline"
 #define TOKEN_HEAD "&access_token="
 #define CONST_TOKEN "&access_token="
-#define REQ_HEAD "https://api.vk.com/method"
 
 #endif
