@@ -37,15 +37,23 @@ R_request ( string * api_method, json_t * out_json )
 	stringset( url, "%s/%s%s&v=%s", REQ_HEAD, api_method, TOKEN.s, API_VER );
 
 	json_error_t * json_err = NULL;
-	out_json = make_request( url, json_err );
+	json_t * json = make_request( url, json_err );
 	free_string(url);
-	if ( !out_json )
+	if ( !json )
 	{
 		if ( json_err )
 			fprintf( stderr, "%s parsing error.\n%d:%s\n", api_method->s, json_err->line, json_err->text );
-
-		json_decref(out_json);
 		return -1;
+	}
+
+	/* simplifying json */
+	out_json = json_object_get( json, "response" );
+	json_decref(json);
+
+	if ( !out_json )
+	{
+		fprintf( stderr, "No valid response found on %s", api_method->s );
+		return -2;
 	}
 
 	return 0;
