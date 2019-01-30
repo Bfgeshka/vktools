@@ -176,6 +176,12 @@ C_init ( void )
 }
 
 void
+C_finish ( void )
+{
+	curl_easy_cleanup(Curl);
+}
+
+void
 C_get_request( const char * url, struct curl_arg * cf )
 {
 	CURLcode code;
