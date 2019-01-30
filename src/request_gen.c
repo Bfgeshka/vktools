@@ -34,7 +34,7 @@ int
 R_request ( string * api_method, json_t * out_json )
 {
 	string * url = construct_string(2048);
-	stringset( url, "%s/%s%s&v=%s", REQ_HEAD, api_method, TOKEN.s, API_VER );
+	stringset( url, "%s/%s%s&v=%s", REQ_HEAD, api_method->s, TOKEN.s, API_VER );
 
 	json_error_t * json_err = NULL;
 	json_t * json = make_request( url, json_err );
