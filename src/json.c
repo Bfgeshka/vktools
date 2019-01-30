@@ -1,5 +1,7 @@
+/* Macros */
 #include "json.h"
 
+/* Global scope */
 long long
 js_get_int( json_t * src, char * key )
 {

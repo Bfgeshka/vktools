@@ -1,7 +1,7 @@
 #ifndef STRINGUTILS_H_
 #define STRINGUTILS_H_
 
-/* Macro */
+/* Macros */
 #include <stdlib.h>
 
 /* Typedef */
@@ -12,7 +12,7 @@ typedef struct string
 	size_t bytes;
 } string;
 
-/* Proto */
+/* Protos */
 string * construct_string ( size_t );
 void newstring ( string *, size_t );
 void stringset ( string *, const char *, ... );

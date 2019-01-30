@@ -1,12 +1,11 @@
-/* Macro */
+/* Macros */
 #include "stringutils.h"
 #include <stdarg.h>
 #include <stdio.h>
 
-/* Proto */
+/* Local scope */
 static void calclen ( string * );
 
-/* Local scope */
 static void
 calclen ( string * str )
 {

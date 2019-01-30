@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "application.h"
 
+/* Global scope */
 void
 A_help ( void )
 {

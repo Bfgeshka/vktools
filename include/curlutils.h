@@ -8,7 +8,7 @@ struct curl_arg
 	size_t size;
 };
 
-/* Proto */
+/* Protos */
 void C_init ( void );
 void C_finish ( void );
 void C_get_request( const char * url, struct curl_arg * cf );

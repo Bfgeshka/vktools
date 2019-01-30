@@ -1,10 +1,11 @@
-
+/* Macros */
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include "stringutils.h"
 #include "os.h"
 
+/* Global scope */
 int
 cp_file ( const char * to, const char * from )
 {
