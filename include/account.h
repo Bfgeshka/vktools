@@ -24,5 +24,11 @@ struct account
 	enum account_type type;
 } account;
 
+/* Protos */
+void AC_init ( void );
+void AC_free ( void );
+void AC_info ( void );
+void AC_get_user ( char * str );
+void AC_get_group ( char * str );
 
 #endif
