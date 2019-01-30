@@ -1,15 +1,16 @@
-/* Macro */
+/* Macros */
 #include <stdio.h>
 #include "json.h"
 #include "stringutils.h"
 #include "curlutils.h"
+#include "../config.h"
 
 #define REQ_HEAD "https://api.vk.com/method"
 #define API_VER "5.62"
 
-/* Proto */
-
 /* Local scope */
+static json_t * make_request ( string * url, json_error_t * json_err );
+
 static json_t *
 make_request ( string * url, json_error_t * json_err )
 {
@@ -49,4 +50,20 @@ R_request ( string * api_method, json_t * out_json )
 	}
 
 	return 0;
+}
+
+void
+R_set_token ( void )
+{
+	/* Token */
+	newstring( &TOKEN, 256 );
+	stringset( &TOKEN, "%s", TOKEN_HEAD );
+
+	string * CONSTTOKEN = construct_string(256);
+	stringset( CONSTTOKEN, "%s", CONST_TOKEN );
+
+	if ( TOKEN.length != CONSTTOKEN->length )
+		stringset( &TOKEN, "%s", CONSTTOKEN->s );
+
+	free_string(CONSTTOKEN);
 }
