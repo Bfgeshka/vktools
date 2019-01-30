@@ -123,7 +123,6 @@ A_args ( int argc, char ** argv )
 						default:
 							goto get_id_invalid_arg;
 					}
-//				if ( ( t == argc - 1 ) && ( acc.usr_ok == 1 ) && ( acc.grp_ok == 1 ) )
 				if ( ( t == argc - 1 ) && account.type == e_null )
 				{
 					AC_get_user(argv[t]);
