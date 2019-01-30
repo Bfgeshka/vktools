@@ -1,10 +1,10 @@
-SRC_COMMON = src/stringutils.c src/curlutils.c src/json.c src/request_gen.c
+SRC_COMMON = src/stringutils.c src/curlutils.c src/json.c src/request_gen.c src/os.c
 SRC_GRAB = src/vkgrab.c src/application_vkgrab.c
 
 NAMEGRAB = vkgrab
 PREFIX = /usr/local
 
-CFLAGS = -O2 -Wall -Wextra -Wpedantic --std=c99 -D_DEFAULT_SOURCE
+CFLAGS = -O2 -Wall -Wextra -Wpedantic --std=c99 -D_DEFAULT_SOURCE -I./include
 LDFLAGS := $(shell pkg-config --libs jansson libcurl)
 
 all: clean options ${NAMEGRAB}
