@@ -1,13 +1,11 @@
 /* Macro */
 #include <curl/curl.h>
 #include <errno.h>
-#include <fcntl.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include "curlutils.h"
+#include "os.h"
 
 /* Visible 1k definition, default is 1 kibibyte */
 #define ONE_K 1024
@@ -18,15 +16,12 @@
 /* Where to store downloading file */
 #define TMP_CURL_FILENAME "/tmp/vkgrab.tmp"
 
-/* Proto */
+/* Local scope */
+static CURL * Curl;
+
 static CURLcode C_fetch ( const char *, struct curl_arg * );
 static int progress_func ( void *, double, double, double, double );
 static size_t C_callback ( void *, size_t, size_t, void * );
-static size_t write_file( void *, size_t, size_t, FILE * );
-static int cp_file ( const char *, const char * );
-
-/* Local scope */
-static CURL * Curl;
 
 static size_t
 C_callback ( void * content, size_t wk_size, size_t wk_nmemb, void * upoint )
@@ -69,13 +64,6 @@ C_fetch ( const char * url, struct curl_arg * fetch_str )
 	return code;
 }
 
-static size_t
-write_file ( void * ptr, size_t size, size_t nmemb, FILE * stream )
-{
-	size_t written = fwrite( ptr, size, nmemb, stream );
-	return written;
-}
-
 static int
 progress_func ( void * ptr, double todl_total, double dl_ed, double undef_a, double undef_b )
 {
@@ -103,64 +91,6 @@ progress_func ( void * ptr, double todl_total, double dl_ed, double undef_a, dou
 	fflush(stdout);
 
 	return 0;
-}
-
-static int
-cp_file ( const char * to, const char * from )
-{
-	int fd_to, fd_from;
-	char buf[BUFSIZ];
-	ssize_t nread;
-
-	fd_from = open( from, O_RDONLY );
-	if ( fd_from < 0 )
-		return -1;
-
-	fd_to = open( to, O_WRONLY | O_CREAT | O_EXCL, 0666 );
-	if ( fd_to < 0 )
-		goto cp_func_out_error;
-
-	while ( nread = read( fd_from, buf, sizeof buf ), nread > 0 )
-	{
-		char * out_ptr = buf;
-		ssize_t nwritten;
-
-		do
-		{
-			nwritten = write( fd_to, out_ptr, nread );
-
-			if ( nwritten >= 0 )
-			{
-				nread -= nwritten;
-				out_ptr += nwritten;
-			}
-			else if ( errno != EINTR )
-				goto cp_func_out_error;
-		}
-		while ( nread > 0 );
-	}
-
-	if ( nread == 0 )
-	{
-		if ( close( fd_to ) < 0 )
-		{
-			fd_to = -1;
-			goto cp_func_out_error;
-		}
-
-		close(fd_from);
-
-		/* Success! */
-		return 0;
-	}
-
-	/* Close descriptors */
-	cp_func_out_error:
-	close(fd_from);
-
-	if ( fd_to >= 0 )
-		close(fd_to);
-	return -1;
 }
 
 /* Global scope */
