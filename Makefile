@@ -15,6 +15,7 @@ options:
 	@echo "CC       = ${CC}"
 
 ${NAMEGRAB}:
+	cp config.def.h config.h
 	${CC} ${SRC_COMMON} ${SRC_GRAB} ${CFLAGS} ${LDFLAGS} -o ${NAMEGRAB}
 
 clean:
