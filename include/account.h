@@ -14,6 +14,7 @@ enum account_type
 
 struct account
 {
+	long long id;
 	string * screenname;
 	string * usr_fname;
 	string * usr_lname;
