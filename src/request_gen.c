@@ -1,8 +1,7 @@
 /* Macros */
 #include <stdio.h>
-#include "json.h"
-#include "stringutils.h"
 #include "curlutils.h"
+#include "request_gen.h"
 #include "../config.h"
 
 #define REQ_HEAD "https://api.vk.com/method"
