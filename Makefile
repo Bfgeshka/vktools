@@ -1,5 +1,5 @@
-SRC_COMMON = src/stringutils.c src/curlutils.c
-SRC_GRAB = src/vkgrab.c
+SRC_COMMON = src/stringutils.c src/curlutils.c src/json.c src/request_gen.c
+SRC_GRAB = src/vkgrab.c src/application_vkgrab.c
 
 NAMEGRAB = vkgrab
 PREFIX = /usr/local
