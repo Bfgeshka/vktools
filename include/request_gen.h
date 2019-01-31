@@ -7,6 +7,6 @@
 
 /* Protos */
 void R_set_token ( void );
-int R_request ( string * api_method, json_t * out_json );
+json_t * R_request ( string * api_method, int * out_json );
 
 #endif

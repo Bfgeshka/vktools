@@ -30,8 +30,8 @@ make_request ( string * url, json_error_t * json_err )
 /* Global scope */
 string TOKEN;
 
-int
-R_request ( string * api_method, json_t * out_json )
+json_t *
+R_request ( string * api_method, int * err )
 {
 	string * url = construct_string(2048);
 	stringset( url, "%s/%s%s&v=%s", REQ_HEAD, api_method->s, TOKEN.s, API_VER );
@@ -43,20 +43,22 @@ R_request ( string * api_method, json_t * out_json )
 	{
 		if ( json_err )
 			fprintf( stderr, "%s parsing error.\n%d:%s\n", api_method->s, json_err->line, json_err->text );
-		return -1;
+
+		* err = -1;
+		return NULL;
 	}
 
 	/* simplifying json */
-	out_json = json_object_get( json, "response" );
-	json_decref(json);
+	json_t * out_json = json_object_get( json, "response" );
 
 	if ( !out_json )
 	{
-		fprintf( stderr, "No valid response found on %s", api_method->s );
-		return -2;
+		fprintf( stderr, "No valid response found on %s\n", api_method->s );
+		* err = -2;
+		return NULL;
 	}
 
-	return 0;
+	return out_json;
 }
 
 void
