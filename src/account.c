@@ -69,15 +69,14 @@ AC_get_user ( char * str )
 	if ( account.type != e_null )
 		return;
 
-	json_t * json = NULL;
+	int err_ret = 0;
 	string * apimeth = construct_string(256);
 	stringset( apimeth, "users.get?user_ids=%s", str );
-	if ( !R_request( apimeth, json ) )
+	json_t * json = R_request( apimeth, &err_ret );
+	if ( err_ret < 0 )
 		return;
 
-	json_t * el;
-	el = json_array_get( json, 0 );
-	json_decref(json);
+	json_t * el = json_array_get( json, 0 );
 
 	/* filling struct */
 	account.type = e_user;
@@ -85,6 +84,8 @@ AC_get_user ( char * str )
 	stringset( account.screenname, "%s", str );
 	stringset( account.usr_fname, "%s", js_get_str( el, "first_name" ) );
 	stringset( account.usr_lname, "%s", js_get_str( el, "last_name" ) );
+
+	json_decref(el);
 }
 
 void
@@ -93,15 +94,16 @@ AC_get_group ( char * str )
 	if ( account.type != e_null )
 		return;
 
-	json_t * json = NULL;
+	int err_ret = 0;
 	string * apimeth = construct_string(256);
 	stringset( apimeth, "groups.getById?group_id=%s", str );
-	if ( !R_request( apimeth, json ) )
+	json_t * json = R_request( apimeth, &err_ret );
+	if ( err_ret < 0 )
 		return;
 
-	json_t * el;
-	el = json_array_get( json, 0 );
-	json_decref(json);
+	puts("AC_get_group");
+
+	json_t * el = json_array_get( json, 0 );
 
 	/* filling struct */
 	account.type = e_group;
@@ -109,4 +111,7 @@ AC_get_group ( char * str )
 	stringset( account.screenname, "%s", str );
 	stringset( account.grp_name, "%s", js_get_str( el, "name" ) );
 	stringset( account.grp_type, "%s", js_get_str( el, "type" ) );
+
+	json_decref(el);
+//	json_decref(json);
 }
