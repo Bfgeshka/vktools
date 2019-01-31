@@ -4,6 +4,7 @@
 #include "curlutils.h"
 #include "request_gen.h"
 #include "application.h"
+#include "account.h"
 
 int
 main ( int argc, char ** argv )
@@ -13,6 +14,7 @@ main ( int argc, char ** argv )
 
 	A_args( argc, argv );
 
+	AC_free();
 	C_finish();
 
 	return EXIT_SUCCESS;
