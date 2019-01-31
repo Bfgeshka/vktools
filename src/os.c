@@ -5,6 +5,17 @@
 #include "stringutils.h"
 #include "os.h"
 
+/* Local scope */
+static void fix_filename( char * dirty );
+
+static void
+fix_filename( char * dirty )
+{
+	for ( unsigned i = 0; dirty[i] != '\0'; ++i )
+		if ( ( ( dirty[i] & 0xC0 ) != 0x80 ) && ( dirty[i] == '/' || dirty[i] == '\\' ) )
+			dirty[i] = '_';
+}
+
 /* Global scope */
 int
 cp_file ( const char * to, const char * from )
@@ -72,7 +83,7 @@ write_file ( void * ptr, size_t size, size_t nmemb, FILE * stream )
 }
 
 int
-readable_date( long long epoch, FILE * log )
+readable_date ( long long epoch, FILE * log )
 {
 	string * date_invoke = construct_string(512);
 	string * date_result = construct_string(512);
@@ -98,4 +109,17 @@ readable_date( long long epoch, FILE * log )
 	free_string(date_invoke);
 	free_string(date_result);
 	return retvalue;
+}
+
+void
+new_directory ( char * str )
+{
+	fix_filename(str);
+
+	if ( mkdir( str, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
+		if ( errno != EEXIST )
+		{
+			fprintf( stderr, "mkdir() error (%d).\n", errno );
+			exit(EXIT_FAILURE);
+		}
 }
