@@ -136,6 +136,7 @@ A_args ( int argc, char ** argv )
 
 	/* Info out */
 	AC_info();
+	return;
 
 	/* Print halp and exit */
 	get_id_print_help:
