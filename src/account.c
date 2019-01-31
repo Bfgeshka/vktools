@@ -3,6 +3,9 @@
 #include "account.h"
 #include "json.h"
 #include "request_gen.h"
+#include "os.h"
+
+#define FILENAME_IDNAME "description.txt"
 
 /* Global scope */
 void
@@ -101,8 +104,6 @@ AC_get_group ( char * str )
 	if ( err_ret < 0 )
 		return;
 
-	puts("AC_get_group");
-
 	json_t * el = json_array_get( json, 0 );
 
 	/* filling struct */
@@ -113,5 +114,58 @@ AC_get_group ( char * str )
 	stringset( account.grp_type, "%s", js_get_str( el, "type" ) );
 
 	json_decref(el);
-//	json_decref(json);
+}
+
+string *
+AC_make_dir ( void )
+{
+	/* Naming file metadata */
+	string * name_descript = construct_string(2048);
+	string * dirname = construct_string(2048);
+
+	switch ( account.type )
+	{
+		case e_group:
+		{
+			stringset( dirname, "c_%lld", account.id );
+			stringset( name_descript, "%lld: %s: %s\n",
+			    account.id,
+			    account.screenname->s,
+			    account.grp_name->s );
+
+			break;
+		}
+
+		case e_user:
+		{
+			stringset( dirname, "u_%lld", account.id );
+			stringset( name_descript, "%lld: %s: %s %s\n",
+			    account.id,
+			    account.screenname->s,
+			    account.usr_fname->s,
+			    account.usr_lname->s );
+
+			break;
+		}
+
+		default:
+		{
+			fprintf( stderr, "Screenname is invalid.\n" );
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	new_directory(dirname->s);
+
+	string * name_dsc_path = construct_string(BUFSIZ);
+	stringset( name_dsc_path, "%s/%s", dirname->s, FILENAME_IDNAME );
+
+	FILE * u_name = fopen( name_dsc_path->s, "w" );
+	fprintf( u_name, "%s", name_descript->s );
+	fclose(u_name);
+
+	free_string(name_dsc_path);
+	free_string(name_descript);
+
+	return dirname;
 }
