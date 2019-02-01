@@ -16,6 +16,7 @@
 #define FILENAME_GROUPS "communities.txt"
 #define FILENAME_FRIENDS "friends.txt"
 #define DIRNAME_WALL "alb_attachments"
+#define DIRNAME_DOCS "alb_docs"
 #define LOG_POSTS_DIVIDER "-~-~-~-~-~-~\n~-~-~-~-~-~-\n\n"
 
 // Limitation for number of wall posts per request. Current is 100
@@ -374,4 +375,63 @@ CT_get_friends( account * acc )
 
 	json_decref(el);
 	fclose(friendsfp);
+}
+
+void
+CT_get_docs ( account * acc )
+{
+	string * apimeth = construct_string(256);
+	stringset( apimeth, "%s/docs.get?owner_id=%lld", acc->id );
+	int err_ret = 0;
+	json_t * json = RQ_request( apimeth, &err_ret );
+	if ( err_ret < 0 )
+		return;
+
+	stringset( acc->currentdir, "%s/%s", acc->directory->s, DIRNAME_DOCS );
+	OS_new_directory(acc->currentdir->s);
+
+//	sstring * dirpath = construct_string(2048);
+//	sstring * doc_path = construct_string(2048);
+//
+//	/* creating document directory */
+//	stringset( dirpath, "%s/%s", idpath, DIRNAME_DOCS );
+//	if ( mkdir( dirpath->c, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
+//		if ( errno != EEXIST )
+//			fprintf( stderr, "mkdir() error (%d).\n", errno );
+//
+//	/* Sending API request docs.get */
+//	sstring * url = construct_string(2048);
+//	stringset( url, "%s/docs.get?owner_id=%lld%s&v=%s", REQ_HEAD, acc.id, TOKEN.c, API_VER );
+//
+//	json_error_t * json_err = NULL;
+//	json_t * json = make_request( url, json_err );
+//	free_string(url);
+//	if ( !json )
+//		if ( json_err )
+//			fprintf( stderr, "JSON docs.get parsing error:\n%d:%s\n", json_err->line, json_err->text );
+//
+//	/* finding response */
+//	json_t * rsp;
+//	rsp = json_object_get( json, "response" );
+//	if ( !rsp )
+//	{
+//		fprintf( stderr, "Documents JSON error.\n" );
+//		rsp = json_object_get( json, "error" );
+//		fprintf( stderr, "%s\n", js_get_str( rsp, "error_msg" ) );
+//	}
+//
+	/* Show documents count */
+	printf("\nDocuments: %lld.\n", js_get_int( json, "count" ) );
+
+	/* Loop init */
+	size_t index;
+	json_t * el;
+	json_t * items = json_object_get( json, "items" );
+	json_array_foreach( items, index, el )
+	{
+//		if ( index != 0 )
+//			dl_document( dirpath, doc_path, el, NULL, -1, -1 );
+	}
+
+	json_decref(el);
 }
