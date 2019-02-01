@@ -381,7 +381,7 @@ void
 CT_get_docs ( account * acc )
 {
 	string * apimeth = construct_string(256);
-	stringset( apimeth, "%s/docs.get?owner_id=%lld", acc->id );
+	stringset( apimeth, "docs.get?owner_id=%lld", acc->id );
 	int err_ret = 0;
 	json_t * json = RQ_request( apimeth, &err_ret );
 	if ( err_ret < 0 )
@@ -421,7 +421,7 @@ CT_get_docs ( account * acc )
 //	}
 //
 	/* Show documents count */
-	printf("\nDocuments: %lld.\n", js_get_int( json, "count" ) );
+	printf("Documents: %lld.\n", js_get_int( json, "count" ) );
 
 	/* Loop init */
 	size_t index;
