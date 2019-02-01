@@ -40,6 +40,9 @@ construct_string ( size_t size )
 void
 free_string ( string * str )
 {
+	if ( str == NULL )
+		return;
+
 	free(str->s);
 	free(str);
 }
