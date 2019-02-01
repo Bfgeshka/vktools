@@ -14,6 +14,7 @@
 
 #define FILENAME_POSTS "wall.txt"
 #define FILENAME_GROUPS "communities.txt"
+#define FILENAME_FRIENDS "friends.txt"
 #define DIRNAME_WALL "alb_attachments"
 #define LOG_POSTS_DIVIDER "-~-~-~-~-~-~\n~-~-~-~-~-~-\n\n"
 
@@ -316,7 +317,7 @@ CT_get_wall ( account * acc )
 void
 CT_get_groups ( account * acc )
 {
-	string * apimeth = construct_string(128);
+	string * apimeth = construct_string(256);
 	stringset( apimeth, "groups.get?user_id=%lld&extended=1", acc->id );
 	int err_ret = 0;
 	json_t * json = RQ_request( apimeth, &err_ret );
@@ -342,4 +343,35 @@ CT_get_groups ( account * acc )
 
 	json_decref(el);
 	fclose(groupsfp);
+}
+
+void
+CT_get_friends( account * acc )
+{
+	string * apimeth = construct_string(256);
+	stringset( apimeth, "friends.get?user_id=%lld&order=domain&fields=domain", acc->id );
+	int err_ret = 0;
+	json_t * json = RQ_request( apimeth, &err_ret );
+	if ( err_ret < 0 )
+		return;
+
+	string * friendsfilepath = construct_string(2048);
+	stringset( friendsfilepath, "%s/%s", acc->directory->s, FILENAME_FRIENDS );
+	FILE * friendsfp = fopen( friendsfilepath->s, "w" );
+	free_string(friendsfilepath);
+
+	printf( "Friends: %lld.\n", js_get_int( json, "count" ) );
+
+	/* iterations in array */
+	size_t index;
+	json_t * el;
+	json_t * items = json_object_get( json, "items" );
+	json_array_foreach( items, index, el )
+	{
+		if ( index != 0 )
+			fprintf( friendsfp, "%s\n", js_get_str( el, "domain" ) );
+	}
+
+	json_decref(el);
+	fclose(friendsfp);
 }

@@ -19,5 +19,6 @@ void CT_print_types ( void );
 void CT_get_albums ( account * acc );
 void CT_get_wall ( account * acc );
 void CT_get_groups ( account * acc );
+void CT_get_friends( account * acc );
 
 #endif
