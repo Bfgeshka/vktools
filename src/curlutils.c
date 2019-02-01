@@ -22,13 +22,14 @@
 
 /* Local scope */
 static CURL * Curl;
-struct timespec deadline;
+static struct timespec deadline;
 static int timeperframe = (int)(NSECS_SEC * .4f);
 
 static CURLcode C_fetch ( const char *, struct curl_arg * );
 static int progress_func ( void *, double, double, double, double );
 static size_t C_callback ( void *, size_t, size_t, void * );
 static void timespec_wrap ( struct timespec * );
+static void C_wait ( void );
 
 static void
 timespec_wrap ( struct timespec * s )
@@ -65,7 +66,7 @@ C_callback ( void * content, size_t wk_size, size_t wk_nmemb, void * upoint )
 		return -1;
 	}
 
-	/* making valid string */
+	// making valid string
 	memcpy( &( p->payload[p->size] ), content, rsize );
 	p->size += rsize;
 	p->payload[p->size] = 0;
