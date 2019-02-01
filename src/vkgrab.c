@@ -1,5 +1,4 @@
 /* Macro */
-#include <stdio.h>
 #include <stdlib.h>
 #include "curlutils.h"
 #include "request_gen.h"
@@ -18,6 +17,12 @@ main ( int argc, char ** argv )
 	// Flow
 	A_args( argc, argv );
 	AC_make_dir(Account);
+
+	if ( Account->type == e_user )
+	{
+		CT_get_groups(Account);
+	}
+
 	CT_get_albums(Account);
 	CT_get_wall(Account);
 
