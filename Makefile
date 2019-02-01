@@ -1,6 +1,6 @@
 CC = cc
 
-SRC_COMMON = src/stringutils.c src/curlutils.c src/json.c src/request_gen.c src/os.c src/account.c src/content_processing.c
+SRC_COMMON = src/stringutils.c src/curlutils.c src/json.c src/request_gen.c src/os.c src/account.c src/content_processing.c src/content_download.c
 SRC_GRAB = src/vkgrab.c src/application_vkgrab.c
 
 NAMEGRAB = vkgrab
