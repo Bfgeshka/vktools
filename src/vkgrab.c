@@ -18,8 +18,8 @@ main ( int argc, char ** argv )
 	// Flow
 	A_args( argc, argv );
 	AC_make_dir(Account);
-
 	CT_get_albums(Account);
+	CT_get_wall(Account);
 
 	// Finish
 	AC_free(Account);
