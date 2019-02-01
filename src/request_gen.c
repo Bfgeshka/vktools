@@ -1,5 +1,6 @@
 /* Macros */
 #include <stdio.h>
+#include <string.h>
 #include "curlutils.h"
 #include "request_gen.h"
 #include "../config.h"
@@ -50,11 +51,18 @@ RQ_request ( string * api_method, int * err )
 
 	/* simplifying json */
 	json_t * out_json = json_object_get( json, "response" );
-
 	if ( !out_json )
 	{
-		fprintf( stderr, "No valid response found on %s\n", api_method->s );
-		* err = -2;
+		out_json = json_object_get( json, "error" );
+		fprintf( stderr, "No valid response found on %s:\n", api_method->s );
+		const char * error_message = js_get_str( out_json, "error_msg" );
+		if ( strcmp( error_message, "Access to post comments denied" ) == 0 )
+			* err = -3;
+		else
+			* err = -2;
+
+		fprintf( stderr, "\t%s, exit = %d\n", error_message, * err );
+
 		return NULL;
 	}
 
