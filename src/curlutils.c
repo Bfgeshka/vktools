@@ -198,7 +198,7 @@ C_get_file ( const char * url, const char * filepath )
 		fflush(stdout);
 		FILE * fw = fopen( TMP_CURL_FILENAME, "w" );
 		curl_easy_setopt( Curl, CURLOPT_URL, url );
-		curl_easy_setopt( Curl, CURLOPT_WRITEFUNCTION, write_file );
+		curl_easy_setopt( Curl, CURLOPT_WRITEFUNCTION, OS_write_file );
 		curl_easy_setopt( Curl, CURLOPT_WRITEDATA, fw );
 		curl_easy_setopt( Curl, CURLOPT_VERBOSE, CRL_VERBOSITY );
 		curl_easy_setopt( Curl, CURLOPT_FOLLOWLOCATION, 1 );
@@ -216,7 +216,7 @@ C_get_file ( const char * url, const char * filepath )
 
 		curl_easy_reset(Curl);
 		fclose(fw);
-		cp_file( filepath, TMP_CURL_FILENAME );
+		OS_cp_file( filepath, TMP_CURL_FILENAME );
 
 		printf( "\r\b%s", filepath );
 		printf( "%s", " \033[01;32m[OK]\033[00m\n" );

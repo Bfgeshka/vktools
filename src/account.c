@@ -164,7 +164,7 @@ AC_make_dir ( account * acc )
 		}
 	}
 
-	new_directory(dirname->s);
+	OS_new_directory(dirname->s);
 
 	string * name_dsc_path = construct_string(BUFSIZ);
 	stringset( name_dsc_path, "%s/%s", dirname->s, FILENAME_IDNAME );
