@@ -67,7 +67,6 @@ CT_get_albums ( account * acc )
 		acc->albums = malloc( counter * sizeof(album) );
 		json_t * al_items;
 		al_items = json_object_get( json, "items" );
-//		albums = malloc( counter * sizeof(struct data_album) );
 		printf( "\nAlbums: %lld.\n", counter );
 
 		json_t * el;
@@ -76,9 +75,9 @@ CT_get_albums ( account * acc )
 		{
 			acc->albums[index].id = js_get_int( el, "id" );
 			acc->albums[index].size = js_get_int( el, "size" );
+
 			acc->albums[index].title = construct_string(1024);
 			stringset( acc->albums[index].title, "%s", js_get_str( el, "title" ) );
-//			photos_count += acc->albums[index].size;
 		}
 	}
 	else
