@@ -141,15 +141,15 @@ A_args ( int argc, char ** argv )
 	/* Print halp and exit */
 	get_id_print_help:
 	A_help();
-	return;
+	exit(EXIT_SUCCESS);
 
 	/* Message about invalid argument and exit */
 	get_id_invalid_arg:
 	puts("Invalid argument.");
-	return;
+	exit(EXIT_FAILURE);
 
 	/* Prink token request link and exit */
 	get_id_token_request:
 	printf( "https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token\n", APPLICATION_ID, PERMISSIONS );
-	return;
+	exit(EXIT_SUCCESS);
 }
