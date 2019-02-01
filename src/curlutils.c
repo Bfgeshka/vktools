@@ -4,24 +4,52 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <time.h>
 #include "curlutils.h"
 #include "os.h"
 
-/* Visible 1k definition, default is 1 kibibyte */
+// Visible 1k definition, default is 1 kibibyte
 #define ONE_K 1024
 
-/* 1L - verbose curl connection, 0L - silent */
+// 1L - verbose curl connection, 0L - silent
 #define CRL_VERBOSITY 0L
 
-/* Where to store downloading file */
+// Where to store downloading file
 #define TMP_CURL_FILENAME "/tmp/vkgrab.tmp"
+
+// nanoseconds in second
+#define NSECS_SEC 1000000000
 
 /* Local scope */
 static CURL * Curl;
+struct timespec deadline;
+static int timeperframe = (int)(NSECS_SEC * .4f);
 
 static CURLcode C_fetch ( const char *, struct curl_arg * );
 static int progress_func ( void *, double, double, double, double );
 static size_t C_callback ( void *, size_t, size_t, void * );
+static void timespec_wrap ( struct timespec * );
+
+static void
+timespec_wrap ( struct timespec * s )
+{
+	if ( s->tv_nsec >= NSECS_SEC )
+	{
+		s->tv_nsec -= NSECS_SEC;
+		s->tv_sec++;
+	}
+}
+
+static void
+C_wait ( void )
+{
+	clock_nanosleep( CLOCK_MONOTONIC, TIMER_ABSTIME, &deadline, NULL );
+
+	clock_gettime( CLOCK_MONOTONIC, &deadline );
+	deadline.tv_sec += 0;
+	deadline.tv_nsec += timeperframe;
+	timespec_wrap(&deadline);
+}
 
 static size_t
 C_callback ( void * content, size_t wk_size, size_t wk_nmemb, void * upoint )
@@ -29,7 +57,7 @@ C_callback ( void * content, size_t wk_size, size_t wk_nmemb, void * upoint )
 	size_t rsize = wk_nmemb * wk_size;
 	struct curl_arg * p = (struct curl_arg *)upoint;
 
-	/* allocation for new size */
+	// Allocation for new size
 	p->payload = realloc( p->payload, p->size + rsize + 1 );
 	if ( p->payload == NULL )
 	{
@@ -47,6 +75,8 @@ C_callback ( void * content, size_t wk_size, size_t wk_nmemb, void * upoint )
 static CURLcode
 C_fetch ( const char * url, struct curl_arg * fetch_str )
 {
+	C_wait();
+
 	CURLcode code;
 
 	if ( fetch_str->payload == NULL )
@@ -97,6 +127,8 @@ progress_func ( void * ptr, double todl_total, double dl_ed, double undef_a, dou
 void
 C_init ( void )
 {
+	clock_gettime( CLOCK_MONOTONIC, &deadline );
+
 	Curl = curl_easy_init();
 	if ( !Curl )
 	{
