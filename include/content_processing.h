@@ -1,6 +1,9 @@
 #ifndef CONTENT_PROCESSING_H_
 #define CONTENT_PROCESSING_H_
 
+/* Macros */
+#include "account.h"
+
 /* Typedef */
 struct content
 {
@@ -13,5 +16,6 @@ struct content
 /* Protos */
 void CT_default ( void );
 void CT_print_types ( void );
+void CT_get_albums ( account * acc );
 
 #endif

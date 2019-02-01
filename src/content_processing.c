@@ -1,7 +1,6 @@
 /* Macros */
 #include "content_processing.h"
 #include "stringutils.h"
-#include "account.h"
 #include "json.h"
 #include "request_gen.h"
 #include <stdio.h>
@@ -46,10 +45,8 @@ CT_print_types ( void )
 	free_string(str);
 }
 
-
-//size_t
 void
-get_albums ( account * acc )
+CT_get_albums ( account * acc )
 {
 	string * apimeth = construct_string(1024);
 	stringset( apimeth, "photos.getAlbums?owner_id=%lld&need_system=1", acc->id );
