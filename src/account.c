@@ -17,7 +17,6 @@ AC_init ( void )
 	account.usr_lname = construct_string(128);
 	account.grp_name = construct_string(128);
 	account.grp_type = construct_string(64);
-
 }
 
 void
@@ -28,6 +27,7 @@ AC_free ( void )
 	free_string(account.usr_lname);
 	free_string(account.grp_name);
 	free_string(account.grp_type);
+	free_string(account.directory);
 }
 
 void
@@ -89,6 +89,7 @@ AC_get_user ( char * str )
 	stringset( account.usr_lname, "%s", js_get_str( el, "last_name" ) );
 
 	json_decref(el);
+	free_string(apimeth);
 }
 
 void
@@ -114,6 +115,7 @@ AC_get_group ( char * str )
 	stringset( account.grp_type, "%s", js_get_str( el, "type" ) );
 
 	json_decref(el);
+	free_string(apimeth);
 }
 
 void
