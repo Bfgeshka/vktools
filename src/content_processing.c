@@ -5,6 +5,7 @@
 #include "request_gen.h"
 #include "os.h"
 #include <stdio.h>
+#include <string.h>
 
 #define DEFAULT_CONTENT_DOCS 1
 #define DEFAULT_CONTENT_PICS 1
@@ -18,7 +19,129 @@
 // Limitation for number of wall posts per request. Current is 100
 #define LIMIT_W 100
 
+/* Limitation for number of comments per request. Current is 100 */
+#define LIMIT_C 100
+
 #define CONVERT_TO_READABLE_DATE 1
+
+/* Local scope */
+static void CT_parse_attachments ( account *, json_t * input_json, FILE * logfile, long long post_id, long long comm_id );
+static void CT_get_comments ( account * acc, FILE * logfile, long long post_id );
+
+static void
+CT_get_comments ( account * acc, FILE * logfile, long long post_id )
+{
+	string * apimeth = construct_string(512);
+
+	long long offset = 0;
+	long long posts_count = 0;
+
+	do
+	{
+		stringset( apimeth, "wall.getComments?owner_id=%lld&extended=0&post_id=%lld&count=%d&offset=%lld",
+		    acc->id,
+		    post_id,
+		    LIMIT_C,
+		    offset );
+
+		int err_ret = 0;
+		json_t * json = RQ_request( apimeth, &err_ret );
+
+		switch ( err_ret )
+		{
+			case -1:
+				return;
+			case -3:
+				content.comments = 0;
+				return;
+			default:
+				break;
+		}
+
+		if ( err_ret != 0 )
+			return;
+
+		/* Getting comments count */
+		if ( offset == 0 )
+			posts_count = js_get_int( json, "count" );
+
+		/* Iterations in array */
+		size_t index;
+		json_t * el;
+		json_t * items = json_object_get( json, "items" );
+		json_array_foreach( items, index, el )
+		{
+			long long c_id = js_get_int( el, "id" );
+			long long epoch = js_get_int( el, "date" );
+
+			fprintf( logfile, "COMMENT %lld: EPOCH: %lld ", c_id, epoch  );
+			if ( CONVERT_TO_READABLE_DATE )
+				if ( OS_readable_date( epoch, logfile ) != 0 )
+					fprintf( stderr, "%s", "Failed to find 'date' utility." );
+
+			fprintf( logfile, "COMMENT %lld: TEXT: %s\n-~-~-~-~-~-~\n", c_id, js_get_str( el, "text" ) );
+
+			/* Searching for attachments */
+			json_t * att_json = json_object_get( el, "attachments" );
+			if ( att_json )
+				CT_parse_attachments( acc, att_json, logfile, post_id, c_id );
+		}
+
+		json_decref(el);
+		offset += LIMIT_C;
+	}
+	while ( posts_count - offset > 0 );
+
+	free_string(apimeth);
+}
+
+static void
+CT_parse_attachments ( account * acc, json_t * input_json, FILE * logfile, long long post_id, long long comm_id )
+{
+//	(void)logfile;
+	(void)post_id;
+	(void)comm_id;
+	(void)acc;
+
+	size_t att_index;
+	json_t * att_elem;
+	char data_type[5][6] = { "photo", "link", "doc", "video" };
+
+	json_array_foreach( input_json, att_index, att_elem )
+	{
+		const char * att_type = js_get_str( att_elem, "type" );
+		json_t * output_json;
+
+		/* If photo: 0 */
+		if ( content.pictures && strcmp( att_type, data_type[0] ) == 0 )
+		{
+//			output_json = json_object_get( att_elem, data_type[0] );
+//			dl_photo( dirpath, filepath, output_json, logfile, post_id, comm_id );
+		}
+
+		/* If link: 1 */
+		if ( strcmp( att_type, data_type[1] ) == 0 )
+		{
+			output_json = json_object_get( att_elem, data_type[1] );
+			fprintf( logfile, "ATTACH: LINK_URL: %s\nATTACH: LINK_DSC: %s\n",
+			    js_get_str( output_json, "url" ), js_get_str( output_json, "description" ) );
+		}
+
+		/* If doc: 2 */
+		if ( content.documents && strcmp( att_type, data_type[2] ) == 0 )
+		{
+//			output_json = json_object_get( att_elem, data_type[2] );
+//			dl_document( dirpath, filepath, output_json, logfile, post_id, comm_id );
+		}
+
+		/* If video: 3 */
+		if ( content.videos && strcmp( att_type, data_type[3] ) == 0 )
+		{
+//			output_json = json_object_get( att_elem, data_type[3] );
+//			dl_video( dirpath, filepath, output_json, logfile, post_id, comm_id );
+		}
+	}
+}
 
 /* Global scope */
 void
@@ -101,7 +224,6 @@ void
 CT_get_wall ( account * acc )
 {
 	string * apimeth = construct_string(128);
-//	string * walldir = construct_string(2048);
 	FILE * wallfp;
 
 	stringset( acc->currentdir, "%s/%s", acc->directory->s, DIRNAME_WALL );
@@ -114,49 +236,11 @@ CT_get_wall ( account * acc )
 
 	long long offset = 0;
 	long long posts_count = 0;
-
-//	/* Char allocation */
-//	sstring * url = construct_string(2048);
-//	sstring * attach_path = construct_string(2048);
-//	sstring * curpath = construct_string(2048);
-
-//	sstring * posts_path = construct_string(2048);
-//	stringset( posts_path, "%s/%s", idpath, FILNAME_POSTS );
-//	FILE * posts = fopen( posts_path->c, "w" );
-//	free_string(posts_path);
-
-//	stringset( curpath, "%s/%s", idpath, DIRNAME_WALL );
-//	if ( mkdir( curpath->c, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
-//		if ( errno != EEXIST )
-//			fprintf( stderr, "mkdir() error (%d).\n", errno );
-
-	/* Loop start */
-//	long long offset = 0;
-//	long long posts_count = 0;
 	do
 	{
-//		stringset( url, "%s/wall.get?owner_id=%lld&extended=0&count=%d&offset=%lld%s&v=%s",
-//		         REQ_HEAD, acc.id, LIMIT_W, offset, TOKEN.c, API_VER );
-//
-//		json_error_t * json_err = NULL;
-//		json_t * json = make_request( url, json_err );
-//		if ( !json )
-//			if ( json_err )
-//				fprintf( stderr, "JSON wall.get parsing error.\n%d:%s\n", json_err->line, json_err->text );
-//
-//		/* Finding response */
-//		json_t * rsp;
-//		rsp = json_object_get( json, "response" );
-//		if ( !rsp )
-//		{
-//			fprintf( stderr, "Wall error.\n" );
-//			rsp = json_object_get( json, "error" );
-//			fprintf( stderr, "%s\n", js_get_str( rsp, "error_msg" ) );
-//		}
-
 		stringset( apimeth, "wall.get?owner_id=%lld&extended=0&count=%d&offset=%lld", acc->id, LIMIT_W, offset );
 		int err_ret = 0;
-		json_t * json = RQ_request( apimeth, &err_ret);
+		json_t * json = RQ_request( apimeth, &err_ret );
 		if ( err_ret < 0 )
 			goto CT_get_wall_cleanup;
 
@@ -184,9 +268,9 @@ CT_get_wall ( account * acc )
 			fprintf( wallfp, "EPOCH: %lld\nTEXT: %s\n", epoch, js_get_str( el, "text" ) );
 
 			/* Searching for attachments */
-//			json_t * att_json = json_object_get( el, "attachments" );
-//			if ( att_json )
-//				parse_attachments( curpath, attach_path, att_json, wallfp, p_id, -1 );
+			json_t * att_json = json_object_get( el, "attachments" );
+			if ( att_json )
+				CT_parse_attachments( acc, att_json, wallfp, p_id, -1 );
 
 			/* Searching for comments */
 			json_t * comments = json_object_get( el, "comments" );
@@ -196,8 +280,8 @@ CT_get_wall ( account * acc )
 				if ( comm_count > 0 )
 				{
 					fprintf( wallfp, "COMMENTS: %lld\n", comm_count );
-//					if ( content.comments )
-//						get_comments( curpath, attach_path, wallfp, p_id );
+					if ( content.comments )
+						CT_get_comments( acc, wallfp, p_id );
 				}
 			}
 
@@ -210,9 +294,9 @@ CT_get_wall ( account * acc )
 				{
 					fprintf( wallfp, "REPOST FROM: %lld\nTEXT: %s\n",
 					         js_get_int( rep_elem, "from_id" ), js_get_str( rep_elem, "text" ) );
-//					json_t * rep_att_json = json_object_get( rep_elem, "attachments" );
-//					if ( rep_att_json )
-//						parse_attachments( curpath, attach_path, rep_att_json, wallfp, p_id, -1 );
+					json_t * rep_att_json = json_object_get( rep_elem, "attachments" );
+					if ( rep_att_json )
+						CT_parse_attachments( acc, rep_att_json, wallfp, p_id, -1 );
 				}
 			}
 
@@ -226,8 +310,5 @@ CT_get_wall ( account * acc )
 
 	CT_get_wall_cleanup:
 	free_string(apimeth);
-//	free_string(attach_path);
-//	free_string(walldir);
-
 	fclose(wallfp);
 }
