@@ -5,7 +5,7 @@
 #include "../config.h"
 
 #define REQ_HEAD "https://api.vk.com/method"
-#define API_VER "5.62"
+#define API_VER "5.92"
 
 /* Local scope */
 static json_t * make_request ( string * url, json_error_t * json_err );
