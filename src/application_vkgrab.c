@@ -27,8 +27,6 @@ A_args ( int argc, char ** argv )
 {
 	extern string TOKEN;
 
-	AC_init();
-
 	switch ( argc )
 	{
 		case 1:
