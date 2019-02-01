@@ -2,6 +2,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "stringutils.h"
 #include "os.h"
 
@@ -97,7 +99,9 @@ OS_readable_date ( long long epoch, FILE * log )
 		goto readable_data_ret_mark;
 	}
 
-	fgets( date_result->s, date_result->bytes, piped );
+	if ( !fgets( date_result->s, date_result->bytes, piped ) )
+		fprintf( stderr, "fgets() error." );
+
 	pclose(piped);
 
 	fprintf( log, "DATE: %s", date_result->s );
