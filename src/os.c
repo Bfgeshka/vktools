@@ -5,20 +5,17 @@
 #include "stringutils.h"
 #include "os.h"
 
-/* Local scope */
-static void fix_filename( char * dirty );
-
-static void
-fix_filename( char * dirty )
+/* Global scope */
+void
+OS_fix_filename ( char * dirty )
 {
 	for ( unsigned i = 0; dirty[i] != '\0'; ++i )
 		if ( ( ( dirty[i] & 0xC0 ) != 0x80 ) && ( dirty[i] == '/' || dirty[i] == '\\' ) )
 			dirty[i] = '_';
 }
 
-/* Global scope */
 int
-cp_file ( const char * to, const char * from )
+OS_cp_file ( const char * to, const char * from )
 {
 	int fd_to, fd_from;
 	char buf[BUFSIZ];
@@ -76,14 +73,14 @@ cp_file ( const char * to, const char * from )
 }
 
 size_t
-write_file ( void * ptr, size_t size, size_t nmemb, FILE * stream )
+OS_write_file ( void * ptr, size_t size, size_t nmemb, FILE * stream )
 {
 	size_t written = fwrite( ptr, size, nmemb, stream );
 	return written;
 }
 
 int
-readable_date ( long long epoch, FILE * log )
+OS_readable_date ( long long epoch, FILE * log )
 {
 	string * date_invoke = construct_string(512);
 	string * date_result = construct_string(512);
@@ -112,10 +109,8 @@ readable_date ( long long epoch, FILE * log )
 }
 
 void
-new_directory ( char * str )
+OS_new_directory ( char * str )
 {
-	fix_filename(str);
-
 	if ( mkdir( str, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
 		{
