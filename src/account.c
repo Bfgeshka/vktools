@@ -18,6 +18,7 @@ AC_init ( void )
 	acc->usr_lname = construct_string(128);
 	acc->grp_name = construct_string(128);
 	acc->grp_type = construct_string(64);
+	acc->currentdir = construct_string(2048);
 
 	return acc;
 }
@@ -31,6 +32,7 @@ AC_free ( account * acc )
 	free_string(acc->grp_name);
 	free_string(acc->grp_type);
 	free_string(acc->directory);
+	free_string(acc->currentdir);
 
 	free(acc->albums);
 }

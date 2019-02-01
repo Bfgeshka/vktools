@@ -30,7 +30,9 @@ typedef struct data_account
 	string * usr_lname;
 	string * grp_name;
 	string * grp_type;
+
 	string * directory;
+	string * currentdir;
 } account;
 
 
