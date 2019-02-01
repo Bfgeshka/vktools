@@ -5,6 +5,7 @@
 #include "request_gen.h"
 #include "application.h"
 #include "account.h"
+#include "content_processing.h"
 
 int
 main ( int argc, char ** argv )
@@ -18,7 +19,10 @@ main ( int argc, char ** argv )
 	A_args( argc, argv );
 	AC_make_dir(Account);
 
+	CT_get_albums(Account);
+
 	// Finish
+	AC_free(Account);
 	C_finish();
 
 	return EXIT_SUCCESS;
