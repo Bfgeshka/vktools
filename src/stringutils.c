@@ -2,6 +2,7 @@
 #include "stringutils.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 /* Local scope */
 static void calclen ( string * );
@@ -51,5 +52,20 @@ stringset ( string * str, const char * fmt, ... )
 	vsnprintf( str->s, str->bytes, fmt, args );
 	va_end(args);
 
+	calclen(str);
+}
+
+void
+stringcat ( string * str, const char * fmt, ... )
+{
+	string * tmp = construct_string(str->bytes);
+
+	va_list args;
+	va_start( args, fmt );
+	vsnprintf( tmp->s, tmp->bytes, fmt, args );
+	va_end(args);
+
+	strcat( str->s, tmp->s );
+	free_string(tmp);
 	calclen(str);
 }

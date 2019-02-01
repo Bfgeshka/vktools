@@ -16,6 +16,7 @@ typedef struct string
 string * construct_string ( size_t );
 void newstring ( string *, size_t );
 void stringset ( string *, const char *, ... );
+void stringcat ( string *, const char *, ... );
 void free_string ( string * );
 
 #endif
