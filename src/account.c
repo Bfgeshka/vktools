@@ -31,6 +31,8 @@ AC_free ( account * acc )
 	free_string(acc->grp_name);
 	free_string(acc->grp_type);
 	free_string(acc->directory);
+
+	free(acc->albums);
 }
 
 void
