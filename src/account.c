@@ -116,7 +116,7 @@ AC_get_group ( char * str )
 	json_decref(el);
 }
 
-string *
+void
 AC_make_dir ( void )
 {
 	/* Naming file metadata */
@@ -167,5 +167,5 @@ AC_make_dir ( void )
 	free_string(name_dsc_path);
 	free_string(name_descript);
 
-	return dirname;
+	account.directory = dirname;
 }

@@ -16,8 +16,7 @@ main ( int argc, char ** argv )
 
 	// Flow
 	A_args( argc, argv );
-	string * dir = AC_make_dir();
-	(void)dir;
+	AC_make_dir();
 
 	// Finish
 	AC_free();

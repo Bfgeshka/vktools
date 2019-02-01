@@ -20,6 +20,7 @@ struct account
 	string * usr_lname;
 	string * grp_name;
 	string * grp_type;
+	string * directory;
 
 	enum account_type type;
 } account;
@@ -30,6 +31,6 @@ void AC_free ( void );
 void AC_info ( void );
 void AC_get_user ( char * str );
 void AC_get_group ( char * str );
-string * AC_make_dir ( void );
+void AC_make_dir ( void );
 
 #endif
