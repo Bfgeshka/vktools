@@ -101,11 +101,11 @@ void
 CT_get_wall ( account * acc )
 {
 	string * apimeth = construct_string(128);
-	string * walldir = construct_string(2048);
+//	string * walldir = construct_string(2048);
 	FILE * wallfp;
 
-	stringset( walldir, "%s/%s", acc->directory->s, DIRNAME_WALL );
-	OS_new_directory(walldir->s);
+	stringset( acc->currentdir, "%s/%s", acc->directory->s, DIRNAME_WALL );
+	OS_new_directory(acc->currentdir->s);
 
 	string * wallfilepath = construct_string(2048);
 	stringset( wallfilepath, "%s/%s", acc->directory->s, FILENAME_POSTS );
@@ -196,7 +196,7 @@ CT_get_wall ( account * acc )
 				if ( comm_count > 0 )
 				{
 					fprintf( wallfp, "COMMENTS: %lld\n", comm_count );
-//					if (types.comts == 1)
+//					if ( content.comments )
 //						get_comments( curpath, attach_path, wallfp, p_id );
 				}
 			}
@@ -210,8 +210,7 @@ CT_get_wall ( account * acc )
 				{
 					fprintf( wallfp, "REPOST FROM: %lld\nTEXT: %s\n",
 					         js_get_int( rep_elem, "from_id" ), js_get_str( rep_elem, "text" ) );
-//					json_t * rep_att_json;
-//					rep_att_json = json_object_get( rep_elem, "attachments" );
+//					json_t * rep_att_json = json_object_get( rep_elem, "attachments" );
 //					if ( rep_att_json )
 //						parse_attachments( curpath, attach_path, rep_att_json, wallfp, p_id, -1 );
 				}
@@ -228,7 +227,7 @@ CT_get_wall ( account * acc )
 	CT_get_wall_cleanup:
 	free_string(apimeth);
 //	free_string(attach_path);
-	free_string(walldir);
+//	free_string(walldir);
 
 	fclose(wallfp);
 }
