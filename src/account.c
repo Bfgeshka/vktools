@@ -75,7 +75,7 @@ AC_get_user ( char * str )
 	int err_ret = 0;
 	string * apimeth = construct_string(256);
 	stringset( apimeth, "users.get?user_ids=%s", str );
-	json_t * json = R_request( apimeth, &err_ret );
+	json_t * json = RQ_request( apimeth, &err_ret );
 	if ( err_ret < 0 )
 		return;
 
@@ -100,7 +100,7 @@ AC_get_group ( char * str )
 	int err_ret = 0;
 	string * apimeth = construct_string(256);
 	stringset( apimeth, "groups.getById?group_id=%s", str );
-	json_t * json = R_request( apimeth, &err_ret );
+	json_t * json = RQ_request( apimeth, &err_ret );
 	if ( err_ret < 0 )
 		return;
 

@@ -11,7 +11,8 @@ main ( int argc, char ** argv )
 {
 	// Init
 	C_init();
-	R_set_token();
+	AC_init();
+	RQ_set_token();
 
 	// Flow
 	A_args( argc, argv );

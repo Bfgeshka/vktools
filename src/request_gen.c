@@ -31,7 +31,7 @@ make_request ( string * url, json_error_t * json_err )
 string TOKEN;
 
 json_t *
-R_request ( string * api_method, int * err )
+RQ_request ( string * api_method, int * err )
 {
 	string * url = construct_string(2048);
 	stringset( url, "%s/%s%s&v=%s", REQ_HEAD, api_method->s, TOKEN.s, API_VER );
@@ -62,7 +62,7 @@ R_request ( string * api_method, int * err )
 }
 
 void
-R_set_token ( void )
+RQ_set_token ( void )
 {
 	/* Token */
 	newstring( &TOKEN, 256 );
