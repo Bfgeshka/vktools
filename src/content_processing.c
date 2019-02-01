@@ -1,5 +1,6 @@
 /* Macros */
 #include "content_processing.h"
+#include "content_download.h"
 #include "stringutils.h"
 #include "json.h"
 #include "request_gen.h"
@@ -429,8 +430,9 @@ CT_get_docs ( account * acc )
 	json_t * items = json_object_get( json, "items" );
 	json_array_foreach( items, index, el )
 	{
-//		if ( index != 0 )
+		if ( index != 0 )
 //			dl_document( dirpath, doc_path, el, NULL, -1, -1 );
+			DL_doc( acc, el, NULL, -1, -1 );
 	}
 
 	json_decref(el);
