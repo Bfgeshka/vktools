@@ -24,7 +24,7 @@ main ( int argc, char ** argv )
 		CT_get_friends(Account);
 	}
 
-//	CT_get_docs(Account);
+	CT_get_docs(Account);
 	CT_get_albums(Account);
 	CT_get_wall(Account);
 
