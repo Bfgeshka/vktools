@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "application.h"
 #include "account.h"
+#include "content_processing.h"
 #include "../config.h"
 
 /* Global scope */
@@ -26,6 +27,8 @@ void
 A_args ( int argc, char ** argv )
 {
 	extern string TOKEN;
+
+	CT_default();
 
 	switch ( argc )
 	{
@@ -90,24 +93,30 @@ A_args ( int argc, char ** argv )
 						case 'n':
 						case 'y':
 						{
-//							int value = ( argv[t][1] == 'n' ) ? 0 : 1;
+							int value = ( argv[t][1] == 'n' ) ? 0 : 1;
 							switch( argv[t][2] )
 							{
 								case 'p':
 								{
-//									types.pictr = value;
+									content.pictures = value;
 									break;
 								}
 
 								case 'd':
 								{
-//									types.docmt = value;
+									content.documents = value;
 									break;
 								}
 
 								case 'v':
 								{
-//									types.video = value;
+									content.videos = value;
+									break;
+								}
+
+								case 'c':
+								{
+									content.comments = value;
 									break;
 								}
 
@@ -134,6 +143,7 @@ A_args ( int argc, char ** argv )
 
 	/* Info out */
 	AC_info();
+	CT_print_types();
 	return;
 
 	/* Print halp and exit */
