@@ -21,6 +21,7 @@ main ( int argc, char ** argv )
 	if ( Account->type == e_user )
 	{
 		CT_get_groups(Account);
+		CT_get_friends(Account);
 	}
 
 	CT_get_albums(Account);
