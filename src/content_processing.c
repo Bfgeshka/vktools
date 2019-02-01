@@ -13,13 +13,14 @@
 #define DEFAULT_CONTENT_COMS 1
 
 #define FILENAME_POSTS "wall.txt"
+#define FILENAME_GROUPS "communities.txt"
 #define DIRNAME_WALL "alb_attachments"
 #define LOG_POSTS_DIVIDER "-~-~-~-~-~-~\n~-~-~-~-~-~-\n\n"
 
 // Limitation for number of wall posts per request. Current is 100
 #define LIMIT_W 100
 
-/* Limitation for number of comments per request. Current is 100 */
+// Limitation for number of comments per request. Current is 100
 #define LIMIT_C 100
 
 #define CONVERT_TO_READABLE_DATE 1
@@ -98,7 +99,6 @@ CT_get_comments ( account * acc, FILE * logfile, long long post_id )
 static void
 CT_parse_attachments ( account * acc, json_t * input_json, FILE * logfile, long long post_id, long long comm_id )
 {
-//	(void)logfile;
 	(void)post_id;
 	(void)comm_id;
 	(void)acc;
@@ -304,11 +304,42 @@ CT_get_wall ( account * acc )
 		}
 
 		offset += LIMIT_W;
-		json_decref(json);
+		json_decref(el);
 	}
 	while( posts_count - offset > 0 );
 
 	CT_get_wall_cleanup:
 	free_string(apimeth);
 	fclose(wallfp);
+}
+
+void
+CT_get_groups ( account * acc )
+{
+	string * apimeth = construct_string(128);
+	stringset( apimeth, "groups.get?user_id=%lld&extended=1", acc->id );
+	int err_ret = 0;
+	json_t * json = RQ_request( apimeth, &err_ret );
+	if ( err_ret < 0 )
+		return;
+
+	string * groupsfilepath = construct_string(2048);
+	stringset( groupsfilepath, "%s/%s", acc->directory->s, FILENAME_GROUPS );
+	FILE * groupsfp = fopen( groupsfilepath->s, "w" );
+	free_string(groupsfilepath);
+
+	printf( "Comminities: %lld.\n", js_get_int( json, "count" ) );
+
+	/* iterations in array */
+	size_t index;
+	json_t * el;
+	json_t * items = json_object_get( json, "items" );
+	json_array_foreach( items, index, el )
+	{
+		if ( index != 0 )
+			fprintf( groupsfp, "%s\n", js_get_str( el, "screen_name" ) );
+	}
+
+	json_decref(el);
+	fclose(groupsfp);
 }
