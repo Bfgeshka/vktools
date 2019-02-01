@@ -1,3 +1,6 @@
+#ifndef CONTENT_PROCESSING_H_
+#define CONTENT_PROCESSING_H_
+
 /* Typedef */
 struct content
 {
@@ -10,3 +13,5 @@ struct content
 /* Protos */
 void CT_default ( void );
 void CT_print_types ( void );
+
+#endif
