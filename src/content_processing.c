@@ -67,7 +67,7 @@ CT_get_albums ( account * acc )
 		acc->albums = malloc( counter * sizeof(album) );
 		json_t * al_items;
 		al_items = json_object_get( json, "items" );
-		printf( "\nAlbums: %lld.\n", counter );
+		printf( "Albums: %lld.\n", counter );
 
 		json_t * el;
 		size_t index;
