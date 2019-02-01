@@ -9,17 +9,16 @@
 int
 main ( int argc, char ** argv )
 {
+	extern account * Account;
 	// Init
 	C_init();
-	AC_init();
 	RQ_set_token();
 
 	// Flow
 	A_args( argc, argv );
-	AC_make_dir();
+	AC_make_dir(Account);
 
 	// Finish
-	AC_free();
 	C_finish();
 
 	return EXIT_SUCCESS;

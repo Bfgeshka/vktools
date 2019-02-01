@@ -8,40 +8,43 @@
 #define FILENAME_IDNAME "description.txt"
 
 /* Global scope */
-void
+account *
 AC_init ( void )
 {
-	account.type = e_null;
-	account.screenname = construct_string(128);
-	account.usr_fname = construct_string(128);
-	account.usr_lname = construct_string(128);
-	account.grp_name = construct_string(128);
-	account.grp_type = construct_string(64);
+	account * acc = malloc(sizeof(account));
+	acc->type = e_null;
+	acc->screenname = construct_string(128);
+	acc->usr_fname = construct_string(128);
+	acc->usr_lname = construct_string(128);
+	acc->grp_name = construct_string(128);
+	acc->grp_type = construct_string(64);
+
+	return acc;
 }
 
 void
-AC_free ( void )
+AC_free ( account * acc )
 {
-	free_string(account.screenname);
-	free_string(account.usr_fname);
-	free_string(account.usr_lname);
-	free_string(account.grp_name);
-	free_string(account.grp_type);
-	free_string(account.directory);
+	free_string(acc->screenname);
+	free_string(acc->usr_fname);
+	free_string(acc->usr_lname);
+	free_string(acc->grp_name);
+	free_string(acc->grp_type);
+	free_string(acc->directory);
 }
 
 void
-AC_info ( void )
+AC_info ( account * acc )
 {
-	switch ( account.type )
+	switch ( acc->type )
 	{
 		case e_group:
 		{
 			printf( "Group: %s (%s).\nGroup ID: %lld.\nType: %s.\n\n",
-			    account.grp_name->s,
-			    account.screenname->s,
-			    account.id,
-			    account.grp_type->s );
+			    acc->grp_name->s,
+			    acc->screenname->s,
+			    acc->id,
+			    acc->grp_type->s );
 
 			return;
 		}
@@ -49,10 +52,10 @@ AC_info ( void )
 		case e_user:
 		{
 			printf( "User: %s %s (%s).\nUser ID: %lld.\n\n",
-			    account.usr_fname->s,
-			    account.usr_lname->s,
-			    account.screenname->s,
-			    account.id );
+			    acc->usr_fname->s,
+			    acc->usr_lname->s,
+			    acc->screenname->s,
+			    acc->id );
 
 			return;
 		}
@@ -66,86 +69,88 @@ AC_info ( void )
 	}
 }
 
-void
+account *
 AC_get_user ( char * str )
 {
-	if ( account.type != e_null )
-		return;
-
 	int err_ret = 0;
 	string * apimeth = construct_string(256);
 	stringset( apimeth, "users.get?user_ids=%s", str );
 	json_t * json = RQ_request( apimeth, &err_ret );
+	free_string(apimeth);
 	if ( err_ret < 0 )
-		return;
+		return NULL;
 
 	json_t * el = json_array_get( json, 0 );
 
 	/* filling struct */
-	account.type = e_user;
-	account.id = js_get_int( el, "id" );
-	stringset( account.screenname, "%s", str );
-	stringset( account.usr_fname, "%s", js_get_str( el, "first_name" ) );
-	stringset( account.usr_lname, "%s", js_get_str( el, "last_name" ) );
+	account * acc = AC_init();
+
+	acc->type = e_user;
+	acc->id = js_get_int( el, "id" );
+	stringset( acc->screenname, "%s", str );
+	stringset( acc->usr_fname, "%s", js_get_str( el, "first_name" ) );
+	stringset( acc->usr_lname, "%s", js_get_str( el, "last_name" ) );
 
 	json_decref(el);
-	free_string(apimeth);
+
+	return acc;
 }
 
-void
+account *
 AC_get_group ( char * str )
 {
-	if ( account.type != e_null )
-		return;
-
 	int err_ret = 0;
 	string * apimeth = construct_string(256);
 	stringset( apimeth, "groups.getById?group_id=%s", str );
 	json_t * json = RQ_request( apimeth, &err_ret );
+	free_string(apimeth);
 	if ( err_ret < 0 )
-		return;
+		return NULL;
 
 	json_t * el = json_array_get( json, 0 );
 
 	/* filling struct */
-	account.type = e_group;
-	account.id = - js_get_int( el, "id" );
-	stringset( account.screenname, "%s", str );
-	stringset( account.grp_name, "%s", js_get_str( el, "name" ) );
-	stringset( account.grp_type, "%s", js_get_str( el, "type" ) );
+	account * acc = AC_init();
+
+	acc->type = e_group;
+	acc->id = - js_get_int( el, "id" );
+	stringset( acc->screenname, "%s", str );
+	stringset( acc->grp_name, "%s", js_get_str( el, "name" ) );
+	stringset( acc->grp_type, "%s", js_get_str( el, "type" ) );
 
 	json_decref(el);
-	free_string(apimeth);
+
+	return acc;
 }
 
 void
-AC_make_dir ( void )
+AC_make_dir ( account * acc )
 {
 	/* Naming file metadata */
 	string * name_descript = construct_string(2048);
 	string * dirname = construct_string(2048);
 
-	switch ( account.type )
+	switch ( acc->type )
 	{
 		case e_group:
 		{
-			stringset( dirname, "c_%lld", account.id );
+			stringset( dirname, "c_%lld", acc->id );
 			stringset( name_descript, "%lld: %s: %s\n",
-			    account.id,
-			    account.screenname->s,
-			    account.grp_name->s );
+			    acc->id,
+			    acc->screenname->s,
+			    acc->grp_name->s );
 
 			break;
 		}
 
 		case e_user:
 		{
-			stringset( dirname, "u_%lld", account.id );
+			stringset( dirname, "u_%lld", acc->id );
 			stringset( name_descript, "%lld: %s: %s %s\n",
-			    account.id,
-			    account.screenname->s,
-			    account.usr_fname->s,
-			    account.usr_lname->s );
+			    acc->id,
+			    acc->screenname->s,
+			    acc->usr_fname->s,
+			    acc->usr_lname->s );
 
 			break;
 		}
@@ -169,5 +174,5 @@ AC_make_dir ( void )
 	free_string(name_dsc_path);
 	free_string(name_descript);
 
-	account.directory = dirname;
+	acc->directory = dirname;
 }

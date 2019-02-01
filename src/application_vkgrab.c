@@ -6,6 +6,8 @@
 #include "../config.h"
 
 /* Global scope */
+account * Account = NULL;
+
 void
 A_help ( void )
 {
@@ -49,8 +51,9 @@ A_args ( int argc, char ** argv )
 				}
 			else
 			{
-				AC_get_user(argv[1]);
-				AC_get_group(argv[1]);
+				Account = AC_get_user(argv[1]);
+				if ( Account == NULL )
+					Account = AC_get_group(argv[1]);
 			}
 
 			break;
@@ -65,13 +68,13 @@ A_args ( int argc, char ** argv )
 					{
 						case 'u':
 						{
-							AC_get_user(argv[t+1]);
+							Account = AC_get_user(argv[t+1]);
 							break;
 						}
 
 						case 'g':
 						{
-							AC_get_group(argv[t+1]);
+							Account = AC_get_group(argv[t+1]);
 							break;
 						}
 
@@ -97,29 +100,17 @@ A_args ( int argc, char ** argv )
 							switch( argv[t][2] )
 							{
 								case 'p':
-								{
 									content.pictures = value;
 									break;
-								}
-
 								case 'd':
-								{
 									content.documents = value;
 									break;
-								}
-
 								case 'v':
-								{
 									content.videos = value;
 									break;
-								}
-
 								case 'c':
-								{
 									content.comments = value;
 									break;
-								}
-
 								default:
 									goto get_id_print_help;
 							}
@@ -130,10 +121,11 @@ A_args ( int argc, char ** argv )
 						default:
 							goto get_id_invalid_arg;
 					}
-				if ( ( t == argc - 1 ) && account.type == e_null )
+				if ( ( t == argc - 1 ) && Account->type == e_null )
 				{
-					AC_get_user(argv[t]);
-					AC_get_group(argv[t]);
+					Account = AC_get_user(argv[t]);
+					if ( Account == NULL )
+						Account = AC_get_group(argv[t]);
 				}
 			}
 
@@ -142,7 +134,7 @@ A_args ( int argc, char ** argv )
 	}
 
 	/* Info out */
-	AC_info();
+	AC_info(Account);
 	CT_print_types();
 	return;
 

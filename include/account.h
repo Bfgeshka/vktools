@@ -5,32 +5,41 @@
 #include "stringutils.h"
 
 /* Typedef */
-enum account_type
+typedef enum account_type
 {
 	e_null = 0,
 	e_group,
 	e_user
-} account_type;
+} acc_type;
 
-struct account
+typedef struct data_album
 {
 	long long id;
+	long long size;
+	string * title;
+} album;
+
+typedef struct data_account
+{
+	acc_type type;
+	long long id;
+	long long albums_count;
+	album * albums;
 	string * screenname;
 	string * usr_fname;
 	string * usr_lname;
 	string * grp_name;
 	string * grp_type;
 	string * directory;
-
-	enum account_type type;
 } account;
 
+
 /* Protos */
-void AC_init ( void );
-void AC_free ( void );
-void AC_info ( void );
-void AC_get_user ( char * str );
-void AC_get_group ( char * str );
-void AC_make_dir ( void );
+account * AC_init ( void );
+void AC_free ( account * );
+void AC_info ( account * );
+account * AC_get_user ( char * str );
+account * AC_get_group ( char * str );
+void AC_make_dir ( account * );
 
 #endif
