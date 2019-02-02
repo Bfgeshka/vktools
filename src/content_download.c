@@ -6,7 +6,7 @@ void
 DL_doc ( account * acc, json_t * el, FILE * log, long long post_id, long long comm_id )
 {
 	string * docfile = construct_string(2048);
-	stringset( docfile, "%s/%lld", acc->directory->s, acc->id );
+	stringset( docfile, "%s/%lld", acc->currentdir->s, acc->id );
 
 	long long did = js_get_int( el, "id" );
 	if ( post_id > 0 )
