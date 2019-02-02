@@ -18,6 +18,9 @@
 #define FILENAME_FRIENDS "friends.txt"
 #define DIRNAME_WALL "alb_attachments"
 #define DIRNAME_DOCS "alb_docs"
+#define DIRNAME_ALB_PROF "alb_profile"
+#define DIRNAME_ALB_WALL "alb_wall"
+#define DIRNAME_ALB_SAVD "alb_saved"
 #define LOG_POSTS_DIVIDER "-~-~-~-~-~-~\n~-~-~-~-~-~-\n\n"
 
 // Limitation for number of wall posts per request. Current is 100
@@ -25,6 +28,9 @@
 
 // Limitation for number of comments per request. Current is 100
 #define LIMIT_C 100
+
+// Limitation for number of photos per request. Current is 1000
+#define LIMIT_A 1000
 
 #define CONVERT_TO_READABLE_DATE 1
 
@@ -201,6 +207,7 @@ CT_get_albums ( account * acc )
 	if ( counter > 0 )
 	{
 		acc->albums = malloc( counter * sizeof(album) );
+		acc->albums_count = counter;
 		json_t * al_items = json_object_get( json, "items" );
 		printf( "Albums: %lld.\n", counter );
 
@@ -347,7 +354,7 @@ CT_get_groups ( account * acc )
 }
 
 void
-CT_get_friends( account * acc )
+CT_get_friends ( account * acc )
 {
 	string * apimeth = construct_string(256);
 	stringset( apimeth, "friends.get?user_id=%lld&order=domain&fields=domain", acc->id );
@@ -406,4 +413,78 @@ CT_get_docs ( account * acc )
 	}
 
 	json_decref(el);
+}
+
+void
+CT_get_albums_files ( account * acc )
+{
+	string * apimeth = construct_string(1024);
+	string * albumdir = construct_string(2048);
+	json_t * json;
+
+	for ( size_t i = 0; i < acc->albums_count; ++i )
+	{
+		printf( "\nAlbum %zu/%zu, id: %lld \"%s\" contains %lld photos.\n",
+		    i + 1,
+		    acc->albums_count,
+		    acc->albums[i].id,
+		    acc->albums[i].title->s,
+		    acc->albums[i].size );
+
+		if ( acc->albums[i].size == 0 )
+			goto CT_get_albums_files_loop_end;
+
+		stringset( albumdir, "%s/", acc->directory->s );
+		switch ( acc->albums[i].id )
+		{
+			case -6:
+				stringcat( albumdir, "%s", DIRNAME_ALB_PROF );
+				break;
+			case -7:
+				stringcat( albumdir, "%s", DIRNAME_ALB_WALL );
+				break;
+			case -15:
+				stringcat( albumdir, "%s", DIRNAME_ALB_SAVD );
+				break;
+			default:
+				stringcat( albumdir, "alb_%lld_(%zu:%zu)_(%lld:p)_(%s)",
+				    acc->albums[i].id,
+				    i + 1,
+				    acc->albums_count,
+				    acc->albums[i].size,
+				    acc->albums[i].title );
+				break;
+		}
+
+		OS_new_directory(albumdir->s);
+		stringset( acc->currentdir, "%s", albumdir->s );
+
+		int times = acc->albums[i].size / LIMIT_A;
+		for ( int offset = 0; offset <= times; ++offset )
+		{
+			stringset( apimeth, "photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d",
+			    acc->id,
+			    acc->albums[i].id,
+			    offset & LIMIT_A );
+
+			int err_ret = 0;
+			json = RQ_request( apimeth, &err_ret );
+			if ( err_ret < 0 )
+				goto CT_get_albums_files_loop_end;
+
+			size_t index;
+			json_t * el;
+			json_t * items = json_object_get( json, "items" );
+			json_array_foreach( items, index, el )
+			{
+				DL_photo( acc, el, NULL, (long long)index + offset * LIMIT_A + 1, -1 );
+			}
+		}
+
+		CT_get_albums_files_loop_end:;
+	}
+
+	json_decref(json);
+	free_string(apimeth);
+	free_string(albumdir);
 }
