@@ -8,5 +8,6 @@
 
 /* Protos */
 void DL_doc ( account * acc, json_t * el, FILE * log, long long post_id, long long comm_id );
+void DL_photo ( account * acc, json_t * el, FILE * log, long long post_id, long long comm_id );
 
 #endif
