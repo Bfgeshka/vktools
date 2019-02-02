@@ -23,7 +23,7 @@ typedef struct data_account
 {
 	acc_type type;
 	long long id;
-	long long albums_count;
+	size_t albums_count;
 	album * albums;
 	string * screenname;
 	string * usr_fname;
