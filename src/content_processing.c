@@ -116,10 +116,10 @@ CT_parse_attachments ( account * acc, json_t * input_json, FILE * logfile, long 
 		json_t * output_json;
 
 		/* If photo: 0 */
-		if ( content.pictures && strcmp( att_type, data_type[0] ) == 0 )
+		if ( content.pictures == 1 && strcmp( att_type, data_type[0] ) == 0 )
 		{
-//			output_json = json_object_get( att_elem, data_type[0] );
-//			dl_photo( dirpath, filepath, output_json, logfile, post_id, comm_id );
+			output_json = json_object_get( att_elem, data_type[0] );
+			DL_photo( acc, output_json, logfile, post_id, comm_id );
 		}
 
 		/* If link: 1 */
@@ -131,18 +131,18 @@ CT_parse_attachments ( account * acc, json_t * input_json, FILE * logfile, long 
 		}
 
 		/* If doc: 2 */
-		if ( content.documents && strcmp( att_type, data_type[2] ) == 0 )
+		if ( content.documents == 1 && strcmp( att_type, data_type[2] ) == 0 )
 		{
 			output_json = json_object_get( att_elem, data_type[2] );
-			DL_doc( acc, att_elem, logfile, post_id, comm_id );
+			DL_doc( acc, output_json, logfile, post_id, comm_id );
 		}
 
 		/* If video: 3 */
-		if ( content.videos && strcmp( att_type, data_type[3] ) == 0 )
-		{
+//		if ( content.videos == 1 && strcmp( att_type, data_type[3] ) == 0 )
+//		{
 //			output_json = json_object_get( att_elem, data_type[3] );
 //			dl_video( dirpath, filepath, output_json, logfile, post_id, comm_id );
-		}
+//		}
 	}
 }
 
@@ -201,8 +201,7 @@ CT_get_albums ( account * acc )
 	if ( counter > 0 )
 	{
 		acc->albums = malloc( counter * sizeof(album) );
-		json_t * al_items;
-		al_items = json_object_get( json, "items" );
+		json_t * al_items = json_object_get( json, "items" );
 		printf( "Albums: %lld.\n", counter );
 
 		json_t * el;
@@ -381,6 +380,9 @@ CT_get_friends( account * acc )
 void
 CT_get_docs ( account * acc )
 {
+	if ( content.documents == 0 )
+		return;
+
 	string * apimeth = construct_string(256);
 	stringset( apimeth, "docs.get?owner_id=%lld", acc->id );
 	int err_ret = 0;
