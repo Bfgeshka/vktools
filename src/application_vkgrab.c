@@ -32,106 +32,102 @@ A_args ( int argc, char ** argv )
 
 	CT_default();
 
-	switch ( argc )
+	if ( argc == 1 )
+		goto get_id_print_help;
+
+	if ( argc == 2 )
 	{
-		case 1:
-			goto get_id_print_help;
-
-		case 2:
-		{
-			if ( argv[1][0] == '-' )
-				switch( argv[1][1] )
-				{
-					case 'h':
-						goto get_id_print_help;
-					case 'T':
-						goto get_id_token_request;
-					default:
-						goto get_id_invalid_arg;
-				}
-			else
+		if ( argv[1][0] == '-' )
+			switch( argv[1][1] )
 			{
-				Account = AC_get_user(argv[1]);
-				if ( Account == NULL )
-					Account = AC_get_group(argv[1]);
+				case 'h':
+					goto get_id_print_help;
+				case 'T':
+					goto get_id_token_request;
+				default:
+					goto get_id_invalid_arg;
 			}
 
-			break;
-		}
+		Account = AC_get_user(argv[1]);
+		if ( Account == NULL )
+			Account = AC_get_group(argv[1]);
 
-		default:
-		{
-			for ( int t = 0; t < argc; ++t )
+		goto get_id_after_switch;
+	}
+
+	for ( int t = 0; t < argc; ++t )
+	{
+		if ( argv[t][0] == '-' )
+			switch( argv[t][1] )
 			{
-				if ( argv[t][0] == '-' )
-					switch( argv[t][1] )
+				case 'u':
+				{
+					Account = AC_get_user(argv[t+1]);
+					break;
+				}
+
+				case 'g':
+				{
+					Account = AC_get_group(argv[t+1]);
+					break;
+				}
+
+				case 't':
+				{
+					if ( argv[t+1] != NULL )
 					{
-						case 'u':
-						{
-							Account = AC_get_user(argv[t+1]);
-							break;
-						}
-
-						case 'g':
-						{
-							Account = AC_get_group(argv[t+1]);
-							break;
-						}
-
-						case 't':
-						{
-							if ( argv[t+1] != NULL )
-							{
-								if ( atoi(argv[t+1]) != 0 )
-									stringset( &TOKEN, "%s%s", TOKEN_HEAD, argv[t+1] );
-								else
-									stringset( &TOKEN, "%c", '\0' );
-							}
-							else
-								goto get_id_invalid_arg;
-
-							break;
-						}
-
-						case 'n':
-						case 'y':
-						{
-							int value = ( argv[t][1] == 'n' ) ? 0 : 1;
-							switch( argv[t][2] )
-							{
-								case 'p':
-									content.pictures = value;
-									break;
-								case 'd':
-									content.documents = value;
-									break;
-								case 'v':
-									content.videos = value;
-									break;
-								case 'c':
-									content.comments = value;
-									break;
-								default:
-									goto get_id_print_help;
-							}
-
-							break;
-						}
-
-						default:
-							goto get_id_invalid_arg;
+						if ( atoi(argv[t+1]) != 0 )
+							stringset( &TOKEN, "%s%s", TOKEN_HEAD, argv[t+1] );
+						else
+							stringset( &TOKEN, "%c", '\0' );
 					}
-				if ( ( t == argc - 1 ) && Account->type == e_null )
-				{
-					Account = AC_get_user(argv[t]);
-					if ( Account == NULL )
-						Account = AC_get_group(argv[t]);
-				}
-			}
+					else
+						goto get_id_invalid_arg;
 
-			break;
+					break;
+				}
+
+				case 'n':
+				case 'y':
+				{
+					if ( argv[t][3] != '\0' )
+						break;
+
+					int value = ( argv[t][1] == 'n' ) ? 0 : 1;
+					switch( argv[t][2] )
+					{
+						case 'p':
+							content.pictures = value;
+							break;
+						case 'd':
+							content.documents = value;
+							break;
+						case 'v':
+							content.videos = value;
+							break;
+						case 'c':
+							content.comments = value;
+							break;
+						default:
+							goto get_id_print_help;
+					}
+
+					break;
+				}
+
+				default:
+					goto get_id_invalid_arg;
+			}
+		if ( ( t == argc - 1 ) && ( Account == NULL || Account->type == e_null ) )
+		{
+			Account = AC_get_user(argv[t]);
+			if ( Account == NULL )
+				Account = AC_get_group(argv[t]);
 		}
 	}
+
+	get_id_after_switch:
+
 
 	/* Info out */
 	AC_info(Account);
