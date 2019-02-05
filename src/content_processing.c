@@ -55,29 +55,75 @@ typedef struct conversation_data
 
 
 /* Local scope */
+static conversator * Conversators = NULL;
+static size_t Conversators_count = 0;
+static conversation * Conversations = NULL;
+static size_t Conversations_count = 0;
+
 static void CT_parse_attachments ( account *, json_t * input_json, FILE * logfile, long long post_id, long long comm_id );
 static void CT_get_comments ( account * acc, FILE * logfile, long long post_id );
-static conversator * CT_get_conversators ( json_t * json, size_t * size );
-static conversation * CT_get_conversations ( json_t * json, size_t * size );
+static void CT_get_conversators ( json_t * json );
+static void CT_get_conversations ( json_t * json );
 static void free_conversator ( conversator * c );
 static void free_conversation ( conversation * c );
-static conversator * CT_find_conversator ( long long id, conversator * conversators, size_t arrsize );
-static conversation * CT_find_conversation ( long long id, conversation * conversations, size_t arrsize );
+static conversator * CT_find_conversator ( long long id );
+static conversation * CT_find_conversation ( long long id );
+static void CT_single_star ( account * acc, json_t * el, FILE * log );
 
-static conversation * CT_find_conversation ( long long id, conversation * conversations, size_t arrsize )
+static void CT_single_star ( account * acc, json_t * el, FILE * log )
 {
-	for ( size_t i = 0; i < arrsize; ++i )
-		if ( id == conversations[i].id )
-			return &conversations[i];
+	long long id = js_get_int( el, "id" );
+
+	fprintf( log, "ID: %lld\n", id );
+
+	conversator * author = CT_find_conversator( js_get_int(el, "from_id" ));
+	if ( author != NULL )
+		fprintf( log, "FROM: %s %s (%lld)\n", author->fname->s, author->lname->s, author->id );
+	else
+		fputs( "FROM: unknown source\n", log );
+
+	conversation * conv = CT_find_conversation( js_get_int(el, "peer_id" ));
+	if ( conv != NULL )
+		fprintf( log, "IN: %s (%lld)\n", conv->name->s, conv->id );
+	else
+		fputs( "IN: unknown source\n", log );
+
+	long long epoch = js_get_int( el, "date" );
+	if ( CONVERT_TO_READABLE_DATE )
+		OS_readable_date( epoch, log );
+
+	fprintf( log, "EPOCH: %lld\n", epoch );
+	fprintf( log, "TEXT:\n%s\n", js_get_str( el, "text" ) );
+
+	CT_parse_attachments( acc, json_object_get( el, "attachments" ), log, id, -1 );
+
+	json_t * reposted = json_object_get( el, "attachments" );
+	if ( reposted != NULL )
+	{
+		for ( size_t i = 0; i < json_array_size(reposted); ++i )
+		{
+			fputs( "Reposted, original post below:\n", log );
+			CT_single_star( acc, json_array_get( el, i ), log );
+		}
+	}
+
+	fprintf( log, "%s", LOG_POSTS_DIVIDER );
+}
+
+static conversation * CT_find_conversation ( long long id )
+{
+	for ( size_t i = 0; i < Conversations_count; ++i )
+		if ( id == Conversations[i].id )
+			return &Conversations[i];
 
 	return NULL;
 }
 
-static conversator * CT_find_conversator ( long long id, conversator * conversators, size_t arrsize )
+static conversator * CT_find_conversator ( long long id )
 {
-	for ( size_t i = 0; i < arrsize; ++i )
-		if ( id == conversators[i].id )
-			return &conversators[i];
+	for ( size_t i = 0; i < Conversators_count; ++i )
+		if ( id == Conversators[i].id )
+			return &Conversators[i];
 
 	return NULL;
 }
@@ -93,48 +139,44 @@ static void free_conversator ( conversator * c )
 	free(c->lname);
 }
 
-static conversation * CT_get_conversations ( json_t * json, size_t * size )
+static void CT_get_conversations ( json_t * json )
 {
-	* size = json_array_size(json);
-	conversation * retvalue = malloc( sizeof(conversation) * (* size) );
+	Conversations_count = json_array_size(json);
+	Conversations = malloc( sizeof(conversation) * Conversations_count );
 
 	json_t * el;
 	json_t * peer;
 	json_t * settings;
-	for ( size_t i = 0; i < (* size); ++i )
+	for ( size_t i = 0; i < Conversations_count; ++i )
 	{
 		el = json_array_get( json, i );
 		peer = json_object_get( el, "peer" );
 		settings = json_object_get( el, "chat_settings" );
 
-		retvalue[i].id = js_get_int( peer, "id" );
-		retvalue[i].localid = js_get_int( peer, "local_id" );
+		Conversations[i].id = js_get_int( peer, "id" );
+		Conversations[i].localid = js_get_int( peer, "local_id" );
 
-		retvalue[i].name = construct_string(128);
-		stringset( retvalue[i].name, "%s", js_get_str( settings, "title" ) );
+		Conversations[i].name = construct_string(128);
+		stringset( Conversations[i].name, "%s", js_get_str( settings, "title" ) );
 	}
-
-	return retvalue;
 }
 
-static conversator * CT_get_conversators ( json_t * json, size_t * size )
+static void CT_get_conversators ( json_t * json )
 {
-	* size = json_array_size(json);
-	conversator * retvalue = malloc( sizeof(conversator) * (* size) );
+	Conversators_count = json_array_size(json);
+	Conversators = malloc( sizeof(conversator) * Conversators_count );
 
 	json_t * el;
-	for ( size_t i = 0; i < (* size); ++i )
+	for ( size_t i = 0; i < Conversators_count; ++i )
 	{
 		el = json_array_get( json, i );
-		retvalue[i].id = js_get_int( el, "id" );
+		Conversators[i].id = js_get_int( el, "id" );
 
-		retvalue[i].fname = construct_string(128);
-		stringset( retvalue[i].fname, "%s", js_get_str( el, "first_name" ) );
-		retvalue[i].lname = construct_string(128);
-		stringset( retvalue[i].lname, "%s", js_get_str( el, "last_name" ) );
+		Conversators[i].fname = construct_string(128);
+		stringset( Conversators[i].fname, "%s", js_get_str( el, "first_name" ) );
+		Conversators[i].lname = construct_string(128);
+		stringset( Conversators[i].lname, "%s", js_get_str( el, "last_name" ) );
 	}
-
-	return retvalue;
 }
 
 static void
@@ -341,11 +383,8 @@ CT_get_stars ( account * acc )
 		if ( err_ret < 0 )
 			goto CT_get_stars_cleanup;
 
-		size_t people_num;
-		conversator * people = CT_get_conversators( json_object_get( json, "profiles"), &people_num );
-
-		size_t conversations_num;
-		conversation * conversations = CT_get_conversations( json_object_get( json, "conversations" ), &conversations_num );
+		CT_get_conversators(json_object_get( json, "profiles"));
+		CT_get_conversations(json_object_get( json, "conversations" ));
 
 		json_t * js_messages_container = json_object_get( json, "messages" );
 		json_t * js_messages = json_object_get( js_messages_container, "items" );
@@ -357,40 +396,41 @@ CT_get_stars ( account * acc )
 			printf( "Starred posts: %lld.\n", posts_count );
 		}
 
-		printf( "People: %zu, dialogs: %zu, messages: %zu\n", people_num, conversations_num, messages_num );
+		printf( "Iteration %lld-%lld, people: %zu, dialogs: %zu, messages: %zu\n", offset, offset + LIMIT_M, Conversators_count, Conversations_count, messages_num );
 		for ( size_t i = 0; i < messages_num; ++i )
 		{
 			json_t * el = json_array_get( js_messages, i );
-			long long id = js_get_int( el, "id" );
-
-			fprintf( starsfp, "ID: %lld\n", id );
-
-			conversator * author = CT_find_conversator( js_get_int( el, "from_id" ), people, people_num );
-			fprintf( starsfp, "FROM: %s %s (%lld)\n", author->fname->s, author->lname->s, author->id );
-
-			conversation * conv = CT_find_conversation( js_get_int( el, "peer_id" ), conversations, conversations_num );
-			fprintf( starsfp, "IN: %s (%lld)\n", conv->name->s, conv->id );
-
-			long long epoch = js_get_int( el, "date" );
-			if ( CONVERT_TO_READABLE_DATE )
-				OS_readable_date( epoch, starsfp );
-
-			fprintf( starsfp, "EPOCH: %lld\n", epoch );
-			fprintf( starsfp, "TEXT:\n%s\n", js_get_str( el, "text" ) );
-
-			CT_parse_attachments( acc, json_object_get( el, "attachments" ), starsfp, id, -1 );
-
-			fprintf( starsfp, "%s", LOG_POSTS_DIVIDER );
+			CT_single_star( acc, el, starsfp );
+//			long long id = js_get_int( el, "id" );
+//
+//			fprintf( starsfp, "ID: %lld\n", id );
+//
+//			conversator * author = CT_find_conversator( js_get_int( el, "from_id" ), people, conversators_count );
+//			fprintf( starsfp, "FROM: %s %s (%lld)\n", author->fname->s, author->lname->s, author->id );
+//
+//			conversation * conv = CT_find_conversation( js_get_int( el, "peer_id" ), conversations, conversations_count );
+//			fprintf( starsfp, "IN: %s (%lld)\n", conv->name->s, conv->id );
+//
+//			long long epoch = js_get_int( el, "date" );
+//			if ( CONVERT_TO_READABLE_DATE )
+//				OS_readable_date( epoch, starsfp );
+//
+//			fprintf( starsfp, "EPOCH: %lld\n", epoch );
+//			fprintf( starsfp, "TEXT:\n%s\n", js_get_str( el, "text" ) );
+//
+//			CT_parse_attachments( acc, json_object_get( el, "attachments" ), starsfp, id, -1 );
+//
+//			fprintf( starsfp, "%s", LOG_POSTS_DIVIDER );
 		}
 
 		// Finishing iteration
-		for ( size_t i = 0; i < people_num; ++i )
-			free_conversator(&people[i]);
-		free(people);
+		for ( size_t i = 0; i < Conversators_count; ++i )
+			free_conversator(&Conversators[i]);
+		free(Conversators);
 
-		for ( size_t i = 0; i < conversations_num; ++i )
-			free_conversation(&conversations[i]);
-		free(conversations);
+		for ( size_t i = 0; i < Conversations_count; ++i )
+			free_conversation(&Conversations[i]);
+		free(Conversations);
 
 		json_decref(json);
 
