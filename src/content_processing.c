@@ -68,9 +68,26 @@ static void CT_free_conversators ( void );
 static void CT_free_conversations ( void );
 static conversator * CT_find_conversator ( long long id );
 static conversation * CT_find_conversation ( long long id );
-static void CT_single_star ( account * acc, json_t * el, FILE * log );
+static void CT_single_star ( account * acc, json_t * el, FILE * log, int nested );
+static void CT_remove_star ( long long id );
 
-static void CT_single_star ( account * acc, json_t * el, FILE * log )
+static void CT_remove_star ( long long id )
+{
+	string * apimeth = construct_string(256);
+	stringset( apimeth, "messages.markAsImportant?important=0&message_ids=%lld", id );
+
+	int err_ret = 0;
+	json_t * json = RQ_request( apimeth, &err_ret );
+	free_string(apimeth);
+	if ( err_ret < 0 )
+		return;
+
+	json_decref(json);
+
+	printf( "Message with id=%lld was marked as not important.\n", id );
+}
+
+static void CT_single_star ( account * acc, json_t * el, FILE * log, int nested )
 {
 	long long id = js_get_int( el, "id" );
 
@@ -95,8 +112,6 @@ static void CT_single_star ( account * acc, json_t * el, FILE * log )
 	fprintf( log, "EPOCH: %lld\n", epoch );
 	fprintf( log, "TEXT:\n%s\n", js_get_str( el, "text" ) );
 
-	CT_parse_attachments( acc, json_object_get( el, "attachments" ), log, id, -1 );
-
 	json_t * reposted = json_object_get( el, "fwd_messages" );
 	if ( reposted != NULL && json_array_size(reposted) > 0 )
 	{
@@ -104,9 +119,13 @@ static void CT_single_star ( account * acc, json_t * el, FILE * log )
 		{
 			fputs( "Reposted, original post below:\n", log );
 			json_t * subelement = json_array_get( reposted, i );
-			CT_single_star( acc, subelement, log );
+			CT_single_star( acc, subelement, log, 1 );
+			if ( nested == 0 && content.clear_stars )
+				CT_remove_star(id);
 		}
 	}
+
+	CT_parse_attachments( acc, json_object_get( el, "attachments" ), log, id, -1 );
 
 	fprintf( log, "END OF ID: %lld\n", id );
 	fprintf( log, "%s", LOG_POSTS_DIVIDER );
@@ -296,6 +315,7 @@ CT_default ( void )
 	content.documents = DEFAULT_CONTENT_DOCS;
 	content.pictures = DEFAULT_CONTENT_PICS;
 	content.videos = DEFAULT_CONTENT_VIDS;
+	content.clear_stars = 0;
 }
 
 void
@@ -404,7 +424,7 @@ CT_get_stars ( account * acc )
 
 		printf( "Iteration %lld-%lld, people: %zu, dialogs: %zu, messages: %zu\n", offset, offset + LIMIT_M, Conversators_count, Conversations_count, messages_num );
 		for ( size_t i = 0; i < messages_num; ++i )
-			CT_single_star( acc, json_array_get( js_messages, i ), starsfp );
+			CT_single_star( acc, json_array_get( js_messages, i ), starsfp, 0 );
 
 		// Finishing iteration
 		CT_free_conversations();
