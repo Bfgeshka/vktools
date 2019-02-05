@@ -31,6 +31,12 @@ make_request ( string * url, json_error_t * json_err )
 /* Global scope */
 string TOKEN;
 
+void
+RQ_finish ( void )
+{
+	free(TOKEN.s);
+}
+
 json_t *
 RQ_request ( string * api_method, int * err )
 {
