@@ -18,11 +18,10 @@ DL_get_photo_url ( json_t * el )
 		int max_size = 0;
 		int max_arr_index = 0;
 
-		json_t * el;
 		int arrsize = json_array_size(sizes);
 		for ( int i = 0; i < arrsize; ++i )
 		{
-			el = json_array_get( sizes, i );
+			json_t * el = json_array_get( sizes, i );
 
 			for ( int j = max_size; j < SIZES; ++j )
 				if ( js_get_str( el, "type" )[0] == SIZES_PRIORITY[j] )
