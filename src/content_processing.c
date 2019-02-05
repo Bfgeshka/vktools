@@ -32,6 +32,9 @@
 // Limitation for number of photos per request. Current is 1000
 #define LIMIT_A 1000
 
+// Limitation for number of messages per request. Current is 200
+#define LIMIT_M 200
+
 #define CONVERT_TO_READABLE_DATE 1
 
 /* Local scope */
@@ -141,13 +144,6 @@ CT_parse_attachments ( account * acc, json_t * input_json, FILE * logfile, long 
 			output_json = json_object_get( att_elem, data_type[2] );
 			DL_doc( acc, output_json, logfile, post_id, comm_id );
 		}
-
-		/* If video: 3 */
-//		if ( content.videos == 1 && strcmp( att_type, data_type[3] ) == 0 )
-//		{
-//			output_json = json_object_get( att_elem, data_type[3] );
-//			dl_video( dirpath, filepath, output_json, logfile, post_id, comm_id );
-//		}
 	}
 }
 
@@ -226,6 +222,12 @@ CT_get_albums ( account * acc )
 		puts( "No albums found." );
 
 	json_decref(json);
+}
+
+void
+CT_get_stars ( account * acc )
+{
+	(void)acc;
 }
 
 void
