@@ -114,7 +114,7 @@ CT_parse_attachments ( account * acc, json_t * input_json, FILE * logfile, long 
 
 	size_t att_index;
 	json_t * att_elem;
-	char data_type[5][6] = { "photo", "link", "doc", "video" };
+	const char data_type[][6] = { "photo", "link", "doc", "video" };
 
 	json_array_foreach( input_json, att_index, att_elem )
 	{
