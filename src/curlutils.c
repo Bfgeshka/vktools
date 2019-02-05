@@ -22,7 +22,7 @@
 /* Local scope */
 static CURL * Curl;
 static struct timespec deadline;
-static int timeperframe = (int)(NSECS_SEC * .35f);
+static int timeperframe = (int)(NSECS_SEC * .4f);
 
 static CURLcode C_fetch ( const char *, struct curl_arg * );
 static int progress_func ( void *, double, double, double, double );
