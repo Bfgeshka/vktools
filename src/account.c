@@ -68,7 +68,7 @@ AC_info ( account * acc )
 		{
 			puts("No such account.");
 
-			return;
+			exit(EXIT_FAILURE);
 		}
 	}
 }
