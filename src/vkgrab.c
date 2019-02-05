@@ -34,5 +34,6 @@ main ( int argc, char ** argv )
 	RQ_finish();
 	C_finish();
 
+	puts("All good, exitting...\n");
 	return EXIT_SUCCESS;
 }
