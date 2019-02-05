@@ -17,7 +17,8 @@ A_help ( void )
 	puts( "  -T                   generate link for getting a token" );
 	puts( "  -t TOKEN             give a valid token without header \"&access_token=\". If TOKEN is zero then anonymous access given" );
 	puts( "  -u USER              ignore group with same screenname" );
-	puts( "  -g GROUP             ignore user with same screenname" );
+	puts( "  -yv, -yd, -yp        allows downloading of video, documents or pictures" );
+	puts( "  -nv, -nd, -np        forbids downloading of video, documents or pictures\n" );
 
 	exit(EXIT_SUCCESS);
 }
@@ -72,6 +73,34 @@ A_args ( int argc, char ** argv )
 					}
 					else
 						goto get_id_invalid_arg;
+
+					break;
+				}
+
+				case 'n':
+				case 'y':
+				{
+					if ( argv[t][3] != '\0' )
+						break;
+
+					int value = ( argv[t][1] == 'n' ) ? 0 : 1;
+					switch( argv[t][2] )
+					{
+						case 'p':
+							content.pictures = value;
+							break;
+						case 'd':
+							content.documents = value;
+							break;
+						case 'v':
+							content.videos = value;
+							break;
+						case 'c':
+							content.comments = value;
+							break;
+						default:
+							goto get_id_print_help;
+					}
 
 					break;
 				}
