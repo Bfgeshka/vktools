@@ -2,7 +2,7 @@ CC = cc
 
 SRC_COMMON = src/stringutils.c src/curlutils.c src/json.c src/request_gen.c src/os.c src/account.c src/content_processing.c src/content_download.c
 SRC_GRAB = src/vkgrab.c src/application_vkgrab.c
-SRC_OWNERDUMP = src/vkownderdump.c src/application_vkownerdump.c
+SRC_OWNERDUMP = src/vkownerdump.c src/application_vkownerdump.c
 
 NAMEGRAB = vkgrab
 NAMEOWNERDUMP = vkownerdump
@@ -24,7 +24,7 @@ ${NAMEGRAB}:
 
 ${NAMEOWNERDUMP}:
 	cp -n config.def.h config.h
-	${CC} ${SRC_COMMON} ${SRC_GRAB} ${CFLAGS} ${LDFLAGS} -o ${NAMEOWNERDUMP}
+	${CC} ${SRC_COMMON} ${SRC_OWNERDUMP} ${CFLAGS} ${LDFLAGS} -o ${NAMEOWNERDUMP}
 
 clean:
 	rm -f ${NAMEGRAB}
