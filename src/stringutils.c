@@ -70,7 +70,7 @@ stringcat ( string * str, const char * fmt, ... )
 	vsnprintf( tmp->s, tmp->bytes, fmt, args );
 	va_end(args);
 
-	strcat( str->s, tmp->s );
+	strncat( str->s, tmp->s, str->bytes );
 	free_string(tmp);
 	calclen(str);
 }
