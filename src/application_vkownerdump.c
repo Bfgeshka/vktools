@@ -18,7 +18,9 @@ A_help ( void )
 	puts( "  -t TOKEN             give a valid token without header \"&access_token=\". If TOKEN is zero then anonymous access given" );
 	puts( "  -u USER              ignore group with same screenname" );
 	puts( "  -yv, -yd, -yp        allows downloading of video, documents or pictures" );
-	puts( "  -nv, -nd, -np        forbids downloading of video, documents or pictures\n" );
+	puts( "  -nv, -nd, -np        forbids downloading of video, documents or pictures" );
+	puts( "  -rs                  remove stars after downloading" );
+	puts("\n");
 
 	exit(EXIT_SUCCESS);
 }
@@ -103,6 +105,20 @@ A_args ( int argc, char ** argv )
 					}
 
 					break;
+				}
+
+				case 'r':
+				{
+					if ( argv[t][3] != '\0' )
+						break;
+					switch( argv[t][2] )
+					{
+						case 's':
+							content.clear_stars = 1;
+							break;
+						default:
+							goto get_id_print_help;
+					}
 				}
 
 				default:
