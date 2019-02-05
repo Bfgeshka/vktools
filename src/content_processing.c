@@ -8,19 +8,21 @@
 #include <stdio.h>
 #include <string.h>
 
+#define CONVERT_TO_READABLE_DATE 1
 #define DEFAULT_CONTENT_DOCS 1
 #define DEFAULT_CONTENT_PICS 1
 #define DEFAULT_CONTENT_VIDS 0
 #define DEFAULT_CONTENT_COMS 1
-
 #define FILENAME_POSTS "wall.txt"
 #define FILENAME_GROUPS "communities.txt"
 #define FILENAME_FRIENDS "friends.txt"
+#define FILENAME_STARS "stars.txt"
 #define DIRNAME_WALL "alb_attachments"
 #define DIRNAME_DOCS "alb_docs"
 #define DIRNAME_ALB_PROF "alb_profile"
 #define DIRNAME_ALB_WALL "alb_wall"
 #define DIRNAME_ALB_SAVD "alb_saved"
+#define DIRNAME_STARS "alb_stars"
 #define LOG_POSTS_DIVIDER "-~-~-~-~-~-~\n~-~-~-~-~-~-\n\n"
 
 // Limitation for number of wall posts per request. Current is 100
@@ -35,11 +37,105 @@
 // Limitation for number of messages per request. Current is 200
 #define LIMIT_M 200
 
-#define CONVERT_TO_READABLE_DATE 1
+
+/* Typedef */
+typedef struct conversation_user
+{
+	long long id;
+	string * fname;
+	string * lname;
+} conversator;
+
+typedef struct conversation_data
+{
+	long long id;
+	long long localid;
+	string * name;
+} conversation;
+
 
 /* Local scope */
 static void CT_parse_attachments ( account *, json_t * input_json, FILE * logfile, long long post_id, long long comm_id );
 static void CT_get_comments ( account * acc, FILE * logfile, long long post_id );
+static conversator * CT_get_conversators ( json_t * json, size_t * size );
+static conversation * CT_get_conversations ( json_t * json, size_t * size );
+static void free_conversator ( conversator * c );
+static void free_conversation ( conversation * c );
+static conversator * CT_find_conversator ( long long id, conversator * conversators, size_t arrsize );
+static conversation * CT_find_conversation ( long long id, conversation * conversations, size_t arrsize );
+
+static conversation * CT_find_conversation ( long long id, conversation * conversations, size_t arrsize )
+{
+	for ( size_t i = 0; i < arrsize; ++i )
+		if ( id == conversations[i].id )
+			return &conversations[i];
+
+	return NULL;
+}
+
+static conversator * CT_find_conversator ( long long id, conversator * conversators, size_t arrsize )
+{
+	for ( size_t i = 0; i < arrsize; ++i )
+		if ( id == conversators[i].id )
+			return &conversators[i];
+
+	return NULL;
+}
+
+static void free_conversation ( conversation * c )
+{
+	free(c->name);
+}
+
+static void free_conversator ( conversator * c )
+{
+	free(c->fname);
+	free(c->lname);
+}
+
+static conversation * CT_get_conversations ( json_t * json, size_t * size )
+{
+	* size = json_array_size(json);
+	conversation * retvalue = malloc( sizeof(conversation) * (* size) );
+
+	json_t * el;
+	json_t * peer;
+	json_t * settings;
+	for ( size_t i = 0; i < (* size); ++i )
+	{
+		el = json_array_get( json, i );
+		peer = json_object_get( el, "peer" );
+		settings = json_object_get( el, "chat_settings" );
+
+		retvalue[i].id = js_get_int( peer, "id" );
+		retvalue[i].localid = js_get_int( peer, "local_id" );
+
+		retvalue[i].name = construct_string(128);
+		stringset( retvalue[i].name, "%s", js_get_str( settings, "title" ) );
+	}
+
+	return retvalue;
+}
+
+static conversator * CT_get_conversators ( json_t * json, size_t * size )
+{
+	* size = json_array_size(json);
+	conversator * retvalue = malloc( sizeof(conversator) * (* size) );
+
+	json_t * el;
+	for ( size_t i = 0; i < (* size); ++i )
+	{
+		el = json_array_get( json, i );
+		retvalue[i].id = js_get_int( el, "id" );
+
+		retvalue[i].fname = construct_string(128);
+		stringset( retvalue[i].fname, "%s", js_get_str( el, "first_name" ) );
+		retvalue[i].lname = construct_string(128);
+		stringset( retvalue[i].lname, "%s", js_get_str( el, "last_name" ) );
+	}
+
+	return retvalue;
+}
 
 static void
 CT_get_comments ( account * acc, FILE * logfile, long long post_id )
@@ -94,9 +190,7 @@ CT_get_comments ( account * acc, FILE * logfile, long long post_id )
 			fprintf( logfile, "COMMENT %lld: TEXT: %s\n-~-~-~-~-~-~\n", c_id, js_get_str( el, "text" ) );
 
 			/* Searching for attachments */
-			json_t * att_json = json_object_get( el, "attachments" );
-			if ( att_json )
-				CT_parse_attachments( acc, att_json, logfile, post_id, c_id );
+			CT_parse_attachments( acc, json_object_get( el, "attachments" ), logfile, post_id, c_id );
 		}
 
 		json_decref(el);
@@ -110,9 +204,8 @@ CT_get_comments ( account * acc, FILE * logfile, long long post_id )
 static void
 CT_parse_attachments ( account * acc, json_t * input_json, FILE * logfile, long long post_id, long long comm_id )
 {
-	(void)post_id;
-	(void)comm_id;
-	(void)acc;
+	if ( input_json == NULL )
+		return;
 
 	size_t att_index;
 	json_t * att_elem;
@@ -227,7 +320,87 @@ CT_get_albums ( account * acc )
 void
 CT_get_stars ( account * acc )
 {
-	(void)acc;
+	string * apimeth = construct_string(128);
+	FILE * starsfp;
+
+	stringset( acc->currentdir, "%s/%s", acc->directory->s, DIRNAME_STARS );
+	OS_new_directory(acc->currentdir->s);
+
+	string * starfilepath = construct_string(2048);
+	stringset( starfilepath, "%s/%s", acc->directory->s, FILENAME_STARS );
+	starsfp = fopen( starfilepath->s, "w" );
+	free_string(starfilepath);
+
+	long long offset = 0;
+	long long posts_count = 0;
+	do
+	{
+		stringset( apimeth, "messages.getImportantMessages?count=%d&offset=%lld&extended=1", LIMIT_M, offset );
+		int err_ret = 0;
+		json_t * json = RQ_request( apimeth, &err_ret );
+		if ( err_ret < 0 )
+			goto CT_get_stars_cleanup;
+
+		size_t people_num;
+		conversator * people = CT_get_conversators( json_object_get( json, "profiles"), &people_num );
+
+		size_t conversations_num;
+		conversation * conversations = CT_get_conversations( json_object_get( json, "conversations" ), &conversations_num );
+
+		json_t * js_messages_container = json_object_get( json, "messages" );
+		json_t * js_messages = json_object_get( js_messages_container, "items" );
+		size_t messages_num = json_array_size(js_messages);
+
+		if ( offset == 0 )
+		{
+			posts_count = js_get_int( js_messages_container, "count" );
+			printf( "Starred posts: %lld.\n", posts_count );
+		}
+
+		printf( "People: %zu, dialogs: %zu, messages: %zu\n", people_num, conversations_num, messages_num );
+		for ( size_t i = 0; i < messages_num; ++i )
+		{
+			json_t * el = json_array_get( js_messages, i );
+			long long id = js_get_int( el, "id" );
+
+			fprintf( starsfp, "ID: %lld\n", id );
+
+			conversator * author = CT_find_conversator( js_get_int( el, "from_id" ), people, people_num );
+			fprintf( starsfp, "FROM: %s %s (%lld)\n", author->fname->s, author->lname->s, author->id );
+
+			conversation * conv = CT_find_conversation( js_get_int( el, "peer_id" ), conversations, conversations_num );
+			fprintf( starsfp, "IN: %s (%lld)\n", conv->name->s, conv->id );
+
+			long long epoch = js_get_int( el, "date" );
+			if ( CONVERT_TO_READABLE_DATE )
+				OS_readable_date( epoch, starsfp );
+
+			fprintf( starsfp, "EPOCH: %lld\n", epoch );
+			fprintf( starsfp, "TEXT:\n%s\n", js_get_str( el, "text" ) );
+
+			CT_parse_attachments( acc, json_object_get( el, "attachments" ), starsfp, id, -1 );
+
+			fprintf( starsfp, "%s", LOG_POSTS_DIVIDER );
+		}
+
+		// Finishing iteration
+		for ( size_t i = 0; i < people_num; ++i )
+			free_conversator(&people[i]);
+		free(people);
+
+		for ( size_t i = 0; i < conversations_num; ++i )
+			free_conversation(&conversations[i]);
+		free(conversations);
+
+		json_decref(json);
+
+		offset += LIMIT_M;
+	}
+	while( posts_count - offset > 0 );
+
+	CT_get_stars_cleanup:
+	free(apimeth);
+	fclose(starsfp);
 }
 
 void
@@ -277,9 +450,7 @@ CT_get_wall ( account * acc )
 			fprintf( wallfp, "EPOCH: %lld\nTEXT: %s\n", epoch, js_get_str( el, "text" ) );
 
 			/* Searching for attachments */
-			json_t * att_json = json_object_get( el, "attachments" );
-			if ( att_json )
-				CT_parse_attachments( acc, att_json, wallfp, p_id, -1 );
+			CT_parse_attachments( acc, json_object_get( el, "attachments" ), wallfp, p_id, -1 );
 
 			/* Searching for comments */
 			json_t * comments = json_object_get( el, "comments" );
@@ -303,9 +474,8 @@ CT_get_wall ( account * acc )
 				{
 					fprintf( wallfp, "REPOST FROM: %lld\nTEXT: %s\n",
 					         js_get_int( rep_elem, "from_id" ), js_get_str( rep_elem, "text" ) );
-					json_t * rep_att_json = json_object_get( rep_elem, "attachments" );
-					if ( rep_att_json )
-						CT_parse_attachments( acc, rep_att_json, wallfp, p_id, -1 );
+
+					CT_parse_attachments( acc, json_object_get( rep_elem, "attachments" ), wallfp, p_id, -1 );
 				}
 			}
 
