@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <time.h>
 #include "stringutils.h"
 #include "os.h"
 
@@ -77,39 +78,14 @@ OS_cp_file ( const char * to, const char * from )
 size_t
 OS_write_file ( void * ptr, size_t size, size_t nmemb, FILE * stream )
 {
-	size_t written = fwrite( ptr, size, nmemb, stream );
-	return written;
+	return fwrite( ptr, size, nmemb, stream );
 }
 
-int
+void
 OS_readable_date ( long long epoch, FILE * log )
 {
-	string * date_invoke = construct_string(512);
-	string * date_result = construct_string(512);
-	int retvalue = 0;
-
-	stringset( date_invoke, "date --date='@%lld'", epoch );
-
-	FILE * piped;
-	piped = popen( date_invoke->s, "r" );
-	if ( piped == NULL )
-	{
-		stringset( date_result, "%s", "date get failed" );
-		retvalue = -1;
-		goto readable_data_ret_mark;
-	}
-
-	if ( !fgets( date_result->s, date_result->bytes, piped ) )
-		fprintf( stderr, "fgets() error." );
-
-	pclose(piped);
-
-	fprintf( log, "DATE: %s", date_result->s );
-
-	readable_data_ret_mark:
-	free_string(date_invoke);
-	free_string(date_result);
-	return retvalue;
+	time_t epochtime = epoch;
+	fprintf( log, "DATE: %s", ctime(&epochtime));
 }
 
 void

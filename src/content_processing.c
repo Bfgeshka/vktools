@@ -86,8 +86,7 @@ CT_get_comments ( account * acc, FILE * logfile, long long post_id )
 
 			fprintf( logfile, "COMMENT %lld: EPOCH: %lld ", c_id, epoch  );
 			if ( CONVERT_TO_READABLE_DATE )
-				if ( OS_readable_date( epoch, logfile ) != 0 )
-					fprintf( stderr, "%s", "Failed to find 'date' utility." );
+				OS_readable_date( epoch, logfile );
 
 			fprintf( logfile, "COMMENT %lld: TEXT: %s\n-~-~-~-~-~-~\n", c_id, js_get_str( el, "text" ) );
 
@@ -271,8 +270,7 @@ CT_get_wall ( account * acc )
 
 			fprintf( wallfp, "ID: %lld\n", p_id );
 			if ( CONVERT_TO_READABLE_DATE )
-				if ( OS_readable_date( epoch, wallfp ) != 0 )
-					fprintf( stderr, "%s", "Failed to find 'date' utility." );
+				OS_readable_date( epoch, wallfp );
 
 			fprintf( wallfp, "EPOCH: %lld\nTEXT: %s\n", epoch, js_get_str( el, "text" ) );
 
