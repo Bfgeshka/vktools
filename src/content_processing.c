@@ -7,6 +7,8 @@
 #include "os.h"
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+
 
 #define CONVERT_TO_READABLE_DATE 1
 #define DEFAULT_CONTENT_DOCS 1
@@ -120,12 +122,13 @@ static void CT_single_star ( account * acc, json_t * el, FILE * log, int nested 
 			fputs( "Reposted, original post below:\n", log );
 			json_t * subelement = json_array_get( reposted, i );
 			CT_single_star( acc, subelement, log, 1 );
-			if ( nested == 0 && content.clear_stars )
-				CT_remove_star(id);
 		}
 	}
 
 	CT_parse_attachments( acc, json_object_get( el, "attachments" ), log, id, -1 );
+
+	if ( nested == 0 && content.clear_stars )
+		CT_remove_star(id);
 
 	fprintf( log, "END OF ID: %lld\n", id );
 	fprintf( log, "%s", LOG_POSTS_DIVIDER );
@@ -423,6 +426,9 @@ CT_get_stars ( account * acc )
 		}
 
 		printf( "Iteration %lld-%lld, people: %zu, dialogs: %zu, messages: %zu\n", offset, offset + LIMIT_M, Conversators_count, Conversations_count, messages_num );
+
+		sleep(3);
+
 		for ( size_t i = 0; i < messages_num; ++i )
 			CT_single_star( acc, json_array_get( js_messages, i ), starsfp, 0 );
 
