@@ -31,6 +31,7 @@ main ( int argc, char ** argv )
 
 	// Finish
 	AC_free(Account);
+	RQ_finish();
 	C_finish();
 
 	return EXIT_SUCCESS;
