@@ -68,9 +68,9 @@ DL_doc ( account * acc, json_t * el, FILE * log, long long post_id, long long co
 	stringset( docfile, "%s/%lld", acc->currentdir->s, acc->id );
 
 	long long did = js_get_int( el, "id" );
-	if ( post_id > 0 )
+	if ( post_id >= 0 )
 	{
-		if ( comm_id > 0 )
+		if ( comm_id >= 0 )
 		{
 			if ( log != NULL )
 				fprintf( log, "COMMENT %lld: ATTACH: DOCUMENT %lld (\"%s\")\n", comm_id, did, js_get_str( el, "title" ) );
@@ -98,7 +98,7 @@ DL_photo ( account * acc, json_t * el, FILE * log, long long post_id, long long 
 {
 	long long pid = js_get_int( el, "id" );
 
-	if ( post_id > 0 && log != NULL )
+	if ( post_id >= 0 && log != NULL )
 	{
 		if ( comm_id > 0 )
 			fprintf( log, "COMMENT %lld: ATTACH: PHOTO %lld\n", comm_id, pid );
@@ -109,10 +109,10 @@ DL_photo ( account * acc, json_t * el, FILE * log, long long post_id, long long 
 	string * picfile = construct_string(2048);
 	stringset( picfile, "%s/%lld", acc->currentdir->s, acc->id );
 
-	if ( post_id > 0 )
+	if ( post_id >= 0 )
 		stringcat( picfile, "_%lld", post_id );
 
-	if ( comm_id > 0 )
+	if ( comm_id >= 0 )
 		stringcat( picfile, ":%lld", comm_id );
 
 	stringcat( picfile, "_%lld.jpg", pid );
