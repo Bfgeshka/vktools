@@ -64,8 +64,8 @@ static void CT_parse_attachments ( account *, json_t * input_json, FILE * logfil
 static void CT_get_comments ( account * acc, FILE * logfile, long long post_id );
 static void CT_get_conversators ( json_t * json );
 static void CT_get_conversations ( json_t * json );
-static void free_conversator ( conversator * c );
-static void free_conversation ( conversation * c );
+static void CT_free_conversators ( void );
+static void CT_free_conversations ( void );
 static conversator * CT_find_conversator ( long long id );
 static conversation * CT_find_conversation ( long long id );
 static void CT_single_star ( account * acc, json_t * el, FILE * log );
@@ -97,8 +97,8 @@ static void CT_single_star ( account * acc, json_t * el, FILE * log )
 
 	CT_parse_attachments( acc, json_object_get( el, "attachments" ), log, id, -1 );
 
-	json_t * reposted = json_object_get( el, "attachments" );
-	if ( reposted != NULL )
+	json_t * reposted = json_object_get( el, "fwd_messages" );
+	if ( reposted != NULL && json_array_size(reposted) > 0 )
 	{
 		for ( size_t i = 0; i < json_array_size(reposted); ++i )
 		{
@@ -107,6 +107,7 @@ static void CT_single_star ( account * acc, json_t * el, FILE * log )
 		}
 	}
 
+	fprintf( log, "END OF ID: %lld\n", id );
 	fprintf( log, "%s", LOG_POSTS_DIVIDER );
 }
 
@@ -128,15 +129,23 @@ static conversator * CT_find_conversator ( long long id )
 	return NULL;
 }
 
-static void free_conversation ( conversation * c )
+static void CT_free_conversations ( void )
 {
-	free(c->name);
+	for ( size_t i = 0; i < Conversations_count; ++i )
+		free_string(Conversations[i].name);
+
+	free(Conversations);
 }
 
-static void free_conversator ( conversator * c )
+static void CT_free_conversators ( void )
 {
-	free(c->fname);
-	free(c->lname);
+	for ( size_t i = 0; i < Conversators_count; ++i )
+	{
+		free_string(Conversators[i].fname);
+		free_string(Conversators[i].lname);
+	}
+
+	free(Conversators);
 }
 
 static void CT_get_conversations ( json_t * json )
@@ -144,14 +153,11 @@ static void CT_get_conversations ( json_t * json )
 	Conversations_count = json_array_size(json);
 	Conversations = malloc( sizeof(conversation) * Conversations_count );
 
-	json_t * el;
-	json_t * peer;
-	json_t * settings;
 	for ( size_t i = 0; i < Conversations_count; ++i )
 	{
-		el = json_array_get( json, i );
-		peer = json_object_get( el, "peer" );
-		settings = json_object_get( el, "chat_settings" );
+		json_t * el = json_array_get( json, i );
+		json_t * peer = json_object_get( el, "peer" );
+		json_t * settings = json_object_get( el, "chat_settings" );
 
 		Conversations[i].id = js_get_int( peer, "id" );
 		Conversations[i].localid = js_get_int( peer, "local_id" );
@@ -166,10 +172,9 @@ static void CT_get_conversators ( json_t * json )
 	Conversators_count = json_array_size(json);
 	Conversators = malloc( sizeof(conversator) * Conversators_count );
 
-	json_t * el;
 	for ( size_t i = 0; i < Conversators_count; ++i )
 	{
-		el = json_array_get( json, i );
+		json_t * el = json_array_get( json, i );
 		Conversators[i].id = js_get_int( el, "id" );
 
 		Conversators[i].fname = construct_string(128);
@@ -217,11 +222,11 @@ CT_get_comments ( account * acc, FILE * logfile, long long post_id )
 			posts_count = js_get_int( json, "count" );
 
 		/* Iterations in array */
-		size_t index;
-		json_t * el;
 		json_t * items = json_object_get( json, "items" );
-		json_array_foreach( items, index, el )
+		size_t size = json_array_size(items);
+		for ( size_t i = 0; i < size; ++i )
 		{
+			json_t * el = json_array_get( items, 0 );
 			long long c_id = js_get_int( el, "id" );
 			long long epoch = js_get_int( el, "date" );
 
@@ -235,7 +240,7 @@ CT_get_comments ( account * acc, FILE * logfile, long long post_id )
 			CT_parse_attachments( acc, json_object_get( el, "attachments" ), logfile, post_id, c_id );
 		}
 
-		json_decref(el);
+		json_decref(json);
 		offset += LIMIT_C;
 	}
 	while ( posts_count - offset > 0 );
@@ -398,39 +403,11 @@ CT_get_stars ( account * acc )
 
 		printf( "Iteration %lld-%lld, people: %zu, dialogs: %zu, messages: %zu\n", offset, offset + LIMIT_M, Conversators_count, Conversations_count, messages_num );
 		for ( size_t i = 0; i < messages_num; ++i )
-		{
-			json_t * el = json_array_get( js_messages, i );
-			CT_single_star( acc, el, starsfp );
-//			long long id = js_get_int( el, "id" );
-//
-//			fprintf( starsfp, "ID: %lld\n", id );
-//
-//			conversator * author = CT_find_conversator( js_get_int( el, "from_id" ), people, conversators_count );
-//			fprintf( starsfp, "FROM: %s %s (%lld)\n", author->fname->s, author->lname->s, author->id );
-//
-//			conversation * conv = CT_find_conversation( js_get_int( el, "peer_id" ), conversations, conversations_count );
-//			fprintf( starsfp, "IN: %s (%lld)\n", conv->name->s, conv->id );
-//
-//			long long epoch = js_get_int( el, "date" );
-//			if ( CONVERT_TO_READABLE_DATE )
-//				OS_readable_date( epoch, starsfp );
-//
-//			fprintf( starsfp, "EPOCH: %lld\n", epoch );
-//			fprintf( starsfp, "TEXT:\n%s\n", js_get_str( el, "text" ) );
-//
-//			CT_parse_attachments( acc, json_object_get( el, "attachments" ), starsfp, id, -1 );
-//
-//			fprintf( starsfp, "%s", LOG_POSTS_DIVIDER );
-		}
+			CT_single_star( acc, json_array_get( js_messages, i ), starsfp );
 
 		// Finishing iteration
-		for ( size_t i = 0; i < Conversators_count; ++i )
-			free_conversator(&Conversators[i]);
-		free(Conversators);
-
-		for ( size_t i = 0; i < Conversations_count; ++i )
-			free_conversation(&Conversations[i]);
-		free(Conversations);
+		CT_free_conversations();
+		CT_free_conversators();
 
 		json_decref(json);
 
@@ -439,7 +416,7 @@ CT_get_stars ( account * acc )
 	while( posts_count - offset > 0 );
 
 	CT_get_stars_cleanup:
-	free(apimeth);
+	free_string(apimeth);
 	fclose(starsfp);
 }
 
@@ -523,7 +500,7 @@ CT_get_wall ( account * acc )
 		}
 
 		offset += LIMIT_W;
-		json_decref(el);
+		json_decref(json);
 	}
 	while( posts_count - offset > 0 );
 
@@ -539,6 +516,7 @@ CT_get_groups ( account * acc )
 	stringset( apimeth, "groups.get?user_id=%lld&extended=1", acc->id );
 	int err_ret = 0;
 	json_t * json = RQ_request( apimeth, &err_ret );
+	free_string(apimeth);
 	if ( err_ret < 0 )
 		return;
 
@@ -550,16 +528,19 @@ CT_get_groups ( account * acc )
 	printf( "Comminities: %lld.\n", js_get_int( json, "count" ) );
 
 	/* iterations in array */
-	size_t index;
-	json_t * el;
 	json_t * items = json_object_get( json, "items" );
-	json_array_foreach( items, index, el )
+	size_t size = json_array_size(items);
+	if ( size != 0 )
 	{
-		if ( index != 0 )
+		for ( size_t i = 0; i < size; ++i )
+		{
+			json_t * el = json_array_get( items, i );
 			fprintf( groupsfp, "%s\n", js_get_str( el, "screen_name" ) );
+		}
 	}
 
-	json_decref(el);
+	json_decref(json);
+
 	fclose(groupsfp);
 }
 
@@ -570,6 +551,7 @@ CT_get_friends ( account * acc )
 	stringset( apimeth, "friends.get?user_id=%lld&order=domain&fields=domain", acc->id );
 	int err_ret = 0;
 	json_t * json = RQ_request( apimeth, &err_ret );
+	free_string(apimeth);
 	if ( err_ret < 0 )
 		return;
 
@@ -590,7 +572,7 @@ CT_get_friends ( account * acc )
 			fprintf( friendsfp, "%s\n", js_get_str( el, "domain" ) );
 	}
 
-	json_decref(el);
+	json_decref(json);
 	fclose(friendsfp);
 }
 
@@ -604,6 +586,7 @@ CT_get_docs ( account * acc )
 	stringset( apimeth, "docs.get?owner_id=%lld", acc->id );
 	int err_ret = 0;
 	json_t * json = RQ_request( apimeth, &err_ret );
+	free_string(apimeth);
 	if ( err_ret < 0 )
 		return;
 
@@ -622,7 +605,7 @@ CT_get_docs ( account * acc )
 			DL_doc( acc, el, NULL, -1, -1 );
 	}
 
-	json_decref(el);
+	json_decref(json);
 }
 
 void
@@ -630,7 +613,6 @@ CT_get_albums_files ( account * acc )
 {
 	string * apimeth = construct_string(1024);
 	string * albumdir = construct_string(2048);
-	json_t * json;
 
 	for ( size_t i = 0; i < acc->albums_count; ++i )
 	{
@@ -678,7 +660,7 @@ CT_get_albums_files ( account * acc )
 			    offset & LIMIT_A );
 
 			int err_ret = 0;
-			json = RQ_request( apimeth, &err_ret );
+			json_t * json = RQ_request( apimeth, &err_ret );
 			if ( err_ret < 0 )
 				goto CT_get_albums_files_loop_end;
 
@@ -689,12 +671,13 @@ CT_get_albums_files ( account * acc )
 			{
 				DL_photo( acc, el, NULL, (long long)index + offset * LIMIT_A + 1, -1 );
 			}
+
+			json_decref(json);
 		}
 
 		CT_get_albums_files_loop_end:;
 	}
 
-	json_decref(json);
 	free_string(apimeth);
 	free_string(albumdir);
 }
