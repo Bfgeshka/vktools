@@ -109,19 +109,23 @@ A_args ( int argc, char ** argv )
 
 				case 'r':
 				{
-					if ( argv[t][3] != '\0' )
-						break;
-					switch( argv[t][2] )
+					if ( argv[t][3] == '\0' )
 					{
-						case 's':
-							content.clear_stars = 1;
-							break;
-						default:
-							goto get_id_print_help;
+						switch( argv[t][2] )
+						{
+							case 's':
+								content.clear_stars = 1;
+								break;
+							default:
+								goto get_id_print_help;
+						}
 					}
+
+					break;
 				}
 
 				default:
+					puts("Defaulted\n");
 					goto get_id_invalid_arg;
 			}
 
