@@ -34,7 +34,12 @@ AC_free ( account * acc )
 	free_string(acc->directory);
 	free_string(acc->currentdir);
 
+	for ( size_t i = 0; i < acc->albums_count; ++i )
+		free_string(acc->albums[i].title);
+
 	free(acc->albums);
+
+	free(acc);
 }
 
 void
@@ -95,7 +100,7 @@ AC_get_user ( char * str )
 	stringset( acc->usr_fname, "%s", js_get_str( el, "first_name" ) );
 	stringset( acc->usr_lname, "%s", js_get_str( el, "last_name" ) );
 
-	json_decref(el);
+	json_decref(json);
 
 	return acc;
 }
@@ -122,7 +127,7 @@ AC_get_group ( char * str )
 	stringset( acc->grp_name, "%s", js_get_str( el, "name" ) );
 	stringset( acc->grp_type, "%s", js_get_str( el, "type" ) );
 
-	json_decref(el);
+	json_decref(json);
 
 	return acc;
 }
