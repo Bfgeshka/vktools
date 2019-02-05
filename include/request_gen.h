@@ -8,5 +8,6 @@
 /* Protos */
 void RQ_set_token ( void );
 json_t * RQ_request ( string * api_method, int * error );
+void RQ_finish ( void );
 
 #endif
