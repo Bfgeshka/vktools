@@ -34,10 +34,13 @@ AC_free ( account * acc )
 	free_string(acc->directory);
 	free_string(acc->currentdir);
 
-	for ( size_t i = 0; i < acc->albums_count; ++i )
-		free_string(acc->albums[i].title);
+	if (acc->albums != NULL)
+	{
+		for ( size_t i = 0; i < acc->albums_count; ++i )
+			free_string(acc->albums[i].title);
 
-	free(acc->albums);
+		free(acc->albums);
+	}
 
 	free(acc);
 }
