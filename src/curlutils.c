@@ -3,7 +3,6 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
-//#include <sys/types.h>
 #include <time.h>
 #include "curlutils.h"
 #include "os.h"
@@ -82,7 +81,7 @@ C_fetch ( const char * url, struct curl_arg * fetch_str )
 
 	if ( fetch_str->payload == NULL )
 	{
-		fprintf( stderr, "Allocation failed in crl_fetch()\n" );
+		fprintf( stderr, "Allocation failed in C_fetch()\n" );
 		return CURLE_FAILED_INIT;
 	}
 
@@ -129,6 +128,22 @@ void
 C_init ( void )
 {
 	clock_gettime( CLOCK_MONOTONIC, &deadline );
+}
+
+void
+C_finish ( void )
+{
+	if ( Curl )
+		curl_easy_cleanup(Curl);
+
+	curl_global_cleanup();
+}
+
+void
+C_get_request( const char * url, struct curl_arg * cf )
+{
+	if ( Curl )
+		curl_easy_cleanup(Curl);
 
 	Curl = curl_easy_init();
 	if ( !Curl )
@@ -136,17 +151,7 @@ C_init ( void )
 		fprintf( stderr, "Curl initialisation error.\n" );
 		exit(EXIT_FAILURE);
 	}
-}
 
-void
-C_finish ( void )
-{
-	curl_easy_cleanup(Curl);
-}
-
-void
-C_get_request( const char * url, struct curl_arg * cf )
-{
 	CURLcode code;
 
 	/* struct initialiisation */
@@ -154,7 +159,6 @@ C_get_request( const char * url, struct curl_arg * cf )
 	cf->payload = malloc(1);
 
 	/* fetching an answer */
-	curl_easy_reset(Curl);
 	code = C_fetch( url, cf );
 
 	/* checking result */
@@ -167,8 +171,15 @@ C_get_request( const char * url, struct curl_arg * cf )
 size_t
 C_get_file ( const char * url, const char * filepath )
 {
+	if ( Curl )
+		curl_easy_cleanup(Curl);
+
+	Curl = curl_easy_init();
 	if ( !Curl )
+	{
+		fprintf( stderr, "Curl initialisation error.\n" );
 		exit(EXIT_FAILURE);
+	}
 
 	/* skip downloading if file exists */
 	errno = 0;
@@ -214,7 +225,6 @@ C_get_file ( const char * url, const char * filepath )
 			return 1;
 		}
 
-		curl_easy_reset(Curl);
 		fclose(fw);
 		OS_cp_file( filepath, TMP_CURL_FILENAME );
 
