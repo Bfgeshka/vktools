@@ -3,8 +3,7 @@
 #include "stringutils.h"
 #include "curlutils.h"
 
-#define SIZES 10
-static const char SIZES_PRIORITY[SIZES] = { 's', 'm', 'o', 'p', 'q', 'x', 'y', 'z', 'w' };
+static const char SIZES_PRIORITY[] = { 's', 'm', 'o', 'p', 'q', 'x', 'y', 'z', 'w' };
 
 /* Local scope */
 static const char * DL_get_photo_url ( json_t * el );
@@ -18,12 +17,14 @@ DL_get_photo_url ( json_t * el )
 		int max_size = 0;
 		int max_arr_index = 0;
 
+		int prio_size = sizeof(SIZES_PRIORITY) / sizeof(SIZES_PRIORITY[0]);
+
 		int arrsize = json_array_size(sizes);
 		for ( int i = 0; i < arrsize; ++i )
 		{
 			json_t * el = json_array_get( sizes, i );
 
-			for ( int j = max_size; j < SIZES; ++j )
+			for ( int j = max_size; j < prio_size; ++j )
 				if ( js_get_str( el, "type" )[0] == SIZES_PRIORITY[j] )
 				{
 					max_size = j;
