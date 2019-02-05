@@ -103,7 +103,8 @@ static void CT_single_star ( account * acc, json_t * el, FILE * log )
 		for ( size_t i = 0; i < json_array_size(reposted); ++i )
 		{
 			fputs( "Reposted, original post below:\n", log );
-			CT_single_star( acc, json_array_get( el, i ), log );
+			json_t * subelement = json_array_get( reposted, i );
+			CT_single_star( acc, subelement, log );
 		}
 	}
 
