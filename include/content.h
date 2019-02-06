@@ -3,6 +3,10 @@
 
 /* Macros */
 #include "account.h"
+#include "json.h"
+#include <stdio.h>
+#define CONVERT_TO_READABLE_DATE 1
+#define LOG_POSTS_DIVIDER "-~-~-~-~-~-~\n~-~-~-~-~-~-\n\n"
 
 /* Typedef */
 struct content
@@ -23,6 +27,6 @@ void CT_get_groups ( account * acc );
 void CT_get_friends( account * acc );
 void CT_get_docs ( account * acc );
 void CT_get_albums_files ( account * acc );
-void CT_get_stars ( account * acc );
+void CT_parse_attachments ( account *, json_t * input_json, FILE * logfile, long long post_id, long long comm_id );
 
 #endif
