@@ -1,4 +1,4 @@
 
 config\.h
-
-vkgrab\.exe
+*.stackdump
+*.exe
