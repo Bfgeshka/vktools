@@ -20,6 +20,8 @@ AC_init ( void )
 	acc->grp_type = construct_string(64);
 	acc->currentdir = construct_string(2048);
 
+	acc->albums_count = 0;
+
 	return acc;
 }
 
@@ -34,7 +36,7 @@ AC_free ( account * acc )
 	free_string(acc->directory);
 	free_string(acc->currentdir);
 
-	if (acc->albums != NULL)
+	if (acc->albums != NULL && acc->albums_count > 0 )
 	{
 		for ( size_t i = 0; i < acc->albums_count; ++i )
 			free_string(acc->albums[i].title);
