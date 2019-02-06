@@ -1,6 +1,6 @@
 CC = cc
 
-SRC_COMMON = src/stringutils.c src/curlutils.c src/json.c src/request_gen.c src/os.c src/account.c src/content_processing.c src/content_download.c
+SRC_COMMON = src/stringutils.c src/curlutils.c src/json.c src/request_gen.c src/os.c src/account.c src/content.c src/content_download.c src/content_messages.c
 SRC_GRAB = src/vkgrab.c src/application_vkgrab.c
 SRC_OWNERDUMP = src/vkownerdump.c src/application_vkownerdump.c
 
@@ -8,7 +8,7 @@ NAMEGRAB = vkgrab
 NAMEOWNERDUMP = vkownerdump
 PREFIX = /usr/local
 
-CFLAGS = -O2 -s -Wall -Wextra -Wpedantic --std=c99 -D_DEFAULT_SOURCE -I./include
+CFLAGS = -O2 -g -Wall -Wextra -Wpedantic --std=c99 -D_DEFAULT_SOURCE -I./include
 LDFLAGS := $(shell pkg-config --libs jansson libcurl)
 
 all: clean options ${NAMEGRAB} ${NAMEOWNERDUMP}

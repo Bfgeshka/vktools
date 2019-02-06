@@ -4,7 +4,7 @@
 #include "request_gen.h"
 #include "application.h"
 #include "account.h"
-#include "content_processing.h"
+#include "content_messages.h"
 
 int
 main ( int argc, char ** argv )
@@ -19,6 +19,7 @@ main ( int argc, char ** argv )
 	AC_make_dir(Account);
 
 	CT_get_stars(Account);
+	CT_get_conversations_history(Account);
 
 	// Finish
 	AC_free(Account);

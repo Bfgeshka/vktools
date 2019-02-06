@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "application.h"
 #include "account.h"
-#include "content_processing.h"
+#include "content.h"
 #include "../config.h"
 
 /* Global scope */
