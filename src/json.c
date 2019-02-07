@@ -9,9 +9,9 @@ js_get_int( json_t * src, char * key )
 	return json_integer_value(elem);
 }
 
-const char *
+char *
 js_get_str( json_t * src, char * key )
 {
 	json_t * elem = json_object_get( src, key );
-	return json_string_value(elem);
+	return (char *)json_string_value(elem);
 }
