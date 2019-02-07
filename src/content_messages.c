@@ -189,6 +189,26 @@ void
 CT_get_conversations_history ( account * acc )
 {
 	(void)acc;
+
+	string * apimeth = construct_string(128);
+
+	long long offset = 0;
+	long long posts_count = 0;
+	do
+	{
+		stringset( apimeth, "messages.getConversations?count=%d&offset=%lld&extended=1", LIMIT_M, offset );
+		int err_ret = 0;
+		json_t * json = RQ_request( apimeth, &err_ret );
+		if ( err_ret < 0 )
+			goto CT_get_conversations_history_cleanup;
+
+		offset += LIMIT_M;
+		json_decref(json);
+	}
+	while( posts_count - offset > 0 );
+
+	CT_get_conversations_history_cleanup:
+	free_string(apimeth);
 }
 
 void
