@@ -202,6 +202,12 @@ CT_get_conversations_history ( account * acc )
 		if ( err_ret < 0 )
 			goto CT_get_conversations_history_cleanup;
 
+		if ( offset == 0 )
+		{
+			posts_count = js_get_int( json, "count" );
+			printf( "Conversations: %lld.\n", posts_count );
+		}
+
 		offset += LIMIT_M;
 		json_decref(json);
 	}
