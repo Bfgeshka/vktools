@@ -5,6 +5,7 @@
 #include "request_gen.h"
 #include "os.h"
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 #define FILENAME_STARS "stars.txt"
@@ -13,6 +14,14 @@
 #define LIMIT_M 200
 
 /* Typedef */
+typedef enum conversation_type
+{
+	e_ct_null = 0,
+	e_ct_chat,
+	e_ct_user,
+	e_ct_group
+} conversation_type;
+
 typedef struct conversation_user
 {
 	long long id;
@@ -22,6 +31,7 @@ typedef struct conversation_user
 
 typedef struct conversation_data
 {
+	enum conversation_type type;
 	long long id;
 	long long localid;
 	string * name;
@@ -41,6 +51,7 @@ static conversator * S_CT_find_conversator ( long long id );
 static conversation * S_CT_find_conversation ( long long id );
 static void S_CT_single_star ( account * acc, json_t * el, FILE * log, int nested );
 static void S_CT_remove_star ( long long id );
+static void S_CT_single_conversation ( account * acc, conversation * conv );
 
 static void
 S_CT_remove_star ( long long id )
@@ -184,12 +195,82 @@ S_CT_get_conversators ( json_t * json )
 	}
 }
 
+static void
+S_CT_single_conversation ( account * acc, conversation * conv )
+{
+	(void)acc;
+
+	string * apimeth = construct_string(128);
+	conv->name = construct_string(256);
+
+	long long offset = 0;
+	long long posts_count = 0;
+	do
+	{
+		stringset( apimeth, "messages.getHistory?count=%d&offset=%lld&extended=1&peer_id=%lld", LIMIT_M, offset, conv->id );
+		int err_ret = 0;
+		json_t * json = RQ_request( apimeth, &err_ret );
+		if ( err_ret < 0 )
+			goto S_CT_single_conversation_cleanup;
+
+		if ( offset == 0 )
+		{
+			posts_count = js_get_int( json, "count" );
+			printf( "Messages in conversation: %lld.\n", posts_count );
+
+			if ( conv->type == e_ct_chat )
+			{
+				json_t * convjs_arr = json_object_get( json, "conversations" );
+				json_t * conver_meta = json_array_get( convjs_arr, 0 );
+				json_t * chat_settings = json_object_get( conver_meta, "chat_settings" );
+				stringset( conv->name, "%s", js_get_str( chat_settings, "title" ) );
+			}
+
+			if ( conv->type == e_ct_user )
+			{
+				json_t * profiles = json_object_get( json, "profiles" );
+				size_t profsize = json_array_size(profiles);
+				for ( size_t i = 0; i < profsize; ++i )
+				{
+					json_t * el = json_array_get( profiles, i );
+					if ( conv->id == js_get_int( el, "id" ) )
+					{
+						stringset( conv-> name, "%s %s", js_get_str( el, "first_name" ), js_get_str( el, "last_name" ) );
+					}
+				}
+			}
+
+			if ( conv->type == e_ct_group )
+			{
+				json_t * groups = json_object_get( json, "groups" );
+				size_t groupsize = json_array_size(groups);
+				for ( size_t i = 0; i < groupsize; ++i )
+				{
+					json_t * el = json_array_get( groups, i );
+					if ( conv->id == js_get_int( el, "id" ) )
+					{
+						stringset( conv-> name, "%s", js_get_str( el, "name" ) );
+					}
+				}
+			}
+
+			printf( "Conversation with %s, id: %lld, localid: %lld, type: %d\n", conv->name->s, conv->id, conv->localid, conv->type );
+			return;
+		}
+
+		offset += LIMIT_M;
+		json_decref(json);
+	}
+	while( posts_count - offset > 0 );
+
+	S_CT_single_conversation_cleanup:
+	free_string(apimeth);
+}
+
 /* Global scope */
 void
 CT_get_conversations_history ( account * acc )
 {
-	(void)acc;
-
 	string * apimeth = construct_string(128);
 
 	long long offset = 0;
@@ -206,6 +287,31 @@ CT_get_conversations_history ( account * acc )
 		{
 			posts_count = js_get_int( json, "count" );
 			printf( "Conversations: %lld.\n", posts_count );
+		}
+
+		json_t * items = json_object_get( json, "items" );
+		size_t size = json_array_size(items);
+		for ( size_t i = 0; i < size; ++i )
+		{
+			json_t * el_container = json_array_get( items, i );
+			json_t * el = json_object_get( el_container, "conversation" );
+			json_t * peer = json_object_get( el, "peer");
+			conversation * conv = malloc(sizeof(conversation));
+			conv->id = js_get_int( peer, "id" );
+			conv->localid = js_get_int( peer, "local_id" );
+
+			conv->type = e_ct_null;
+			char * type = js_get_str( peer, "type" );
+			if ( strncmp( type, "ch", 2 ) == 0 )
+				conv->type = e_ct_chat;
+			if ( strncmp( type, "us", 2 ) == 0 )
+				conv->type = e_ct_user;
+			if ( strncmp( type, "gr", 2 ) == 0 )
+				conv->type = e_ct_group;
+
+			S_CT_single_conversation( acc, conv );
+
+			free(conv);
 		}
 
 		offset += LIMIT_M;
