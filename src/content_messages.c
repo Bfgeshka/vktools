@@ -235,7 +235,7 @@ S_CT_single_conversation ( account * acc, conversation * conv )
 					json_t * el = json_array_get( profiles, i );
 					if ( conv->id == js_get_int( el, "id" ) )
 					{
-						stringset( conv-> name, "%s %s", js_get_str( el, "first_name" ), js_get_str( el, "last_name" ) );
+						stringset( conv->name, "%s %s", js_get_str( el, "first_name" ), js_get_str( el, "last_name" ) );
 					}
 				}
 			}
@@ -247,11 +247,12 @@ S_CT_single_conversation ( account * acc, conversation * conv )
 				for ( size_t i = 0; i < groupsize; ++i )
 				{
 					json_t * el = json_array_get( groups, i );
-					if ( conv->id == js_get_int( el, "id" ) )
+					if ( conv->localid == js_get_int( el, "id" ) )
 					{
-						stringset( conv-> name, "%s", js_get_str( el, "name" ) );
+						stringset( conv->name, "%s", js_get_str( el, "name" ) );
 					}
 				}
+
 			}
 
 			printf( "Conversation with %s, id: %lld, localid: %lld, type: %d\n", conv->name->s, conv->id, conv->localid, conv->type );
