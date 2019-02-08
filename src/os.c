@@ -13,7 +13,7 @@ void
 OS_fix_filename ( char * dirty )
 {
 	for ( size_t i = 0; dirty[i] != '\0'; ++i )
-		if ( ( ( dirty[i] & 0xC0 ) != 0x80 ) && ( dirty[i] == '/' || dirty[i] == '\\' ) )
+		if ( ( ( dirty[i] & 0xC0 ) != 0x80 ) && ( dirty[i] == '/' || dirty[i] == '\\' || dirty[i] == '|' ) )
 			dirty[i] = '_';
 }
 
