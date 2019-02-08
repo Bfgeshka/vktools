@@ -10,6 +10,7 @@
 
 #define FILENAME_STARS "stars.txt"
 #define FILENAME_CONV_INDEX "conversations.txt"
+#define FILENAME_CONV_HISTORY "log.txt"
 #define DIRNAME_STARS "alb_stars"
 // Limitation for number of messages per request. Current is 200
 #define LIMIT_M 200
@@ -199,7 +200,13 @@ S_CT_get_conversators ( json_t * json )
 static void
 S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 {
-	(void)acc;
+	stringset( acc->currentdir, "%s/conv_%lld", acc->directory->s, conv->id );
+	OS_new_directory(acc->currentdir->s);
+
+	string * historypath = construct_string(2048);
+	stringset( historypath, "%s/%s", acc->currentdir->s, FILENAME_CONV_HISTORY );
+	FILE * convindex = fopen( historypath->s, "w" );
+	free_string(historypath);
 
 	string * apimeth = construct_string(128);
 	conv->name = construct_string(256);
@@ -270,6 +277,9 @@ S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 
 	S_CT_single_conversation_cleanup:
 	free_string(apimeth);
+	fclose(convindex);
+	free_string(conv->name);
+	free(conv);
 }
 
 /* Global scope */
@@ -320,8 +330,6 @@ CT_get_conversations_history ( account * acc )
 				conv->type = e_ct_group;
 
 			S_CT_single_conversation( acc, conv, convindex );
-
-			free(conv);
 		}
 
 		offset += LIMIT_M;
