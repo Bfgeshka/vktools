@@ -205,7 +205,7 @@ S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 
 	string * historypath = construct_string(2048);
 	stringset( historypath, "%s/%s", acc->currentdir->s, FILENAME_CONV_HISTORY );
-	FILE * convindex = fopen( historypath->s, "w" );
+	FILE * convlog = fopen( historypath->s, "w" );
 	free_string(historypath);
 
 	string * apimeth = construct_string(128);
@@ -224,6 +224,7 @@ S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 		json_t * convjs_arr = json_object_get( json, "conversations" );
 		json_t * profiles = json_object_get( json, "profiles" );
 		json_t * groups = json_object_get( json, "groups" );
+		json_t * items = json_object_get( json, "items" );
 
 		if ( offset == 0 )
 		{
@@ -267,7 +268,43 @@ S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 
 			printf( "Conversation with %s, id: %lld, localid: %lld, type: %d\n", conv->name->s, conv->id, conv->localid, conv->type );
 			fprintf( log, "%lld: %s; count: %lld\n", conv->id, conv->name->s, posts_count );
-			return;
+//			return;
+		}
+
+		size_t items_size = json_array_size(items);
+		for ( size_t i = 0; i < items_size; ++i )
+		{
+			json_t * el = json_array_get( items, i );
+
+			long long epoch = js_get_int( el, "date" );
+			long long from = js_get_int( el, "from_id" );
+			long long mess_id = js_get_int( el, "id" );
+
+			fprintf( convlog, "ID: %lld\n", mess_id );
+
+			if ( CONVERT_TO_READABLE_DATE )
+				OS_readable_date( epoch, convlog );
+
+			fprintf( convlog, "EPOCH: %lld\n", epoch );
+			fprintf( convlog, "FROM_ID: %lld\n", from );
+
+			fprintf( convlog, "TEXT:\n%s\n", js_get_str( el, "text" ) );
+
+			CT_parse_attachments( acc, json_object_get( el, "attachments" ), convlog, mess_id, -1 );
+
+			json_t * reposted = json_object_get( el, "fwd_messages" );
+			if ( reposted != NULL && json_array_size(reposted) > 0 )
+			{
+				for ( size_t j = 0; j < json_array_size(reposted); ++j )
+				{
+					fputs( "Quotation, original post below:\n", convlog );
+					json_t * subelement = json_array_get( reposted, j );
+					S_CT_single_star( acc, subelement, convlog, 1 );
+				}
+			}
+
+			fprintf( convlog, "END OF ID: %lld\n", mess_id );
+			fprintf( convlog, "%s", LOG_POSTS_DIVIDER );
 		}
 
 		offset += LIMIT_M;
@@ -277,7 +314,7 @@ S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 
 	S_CT_single_conversation_cleanup:
 	free_string(apimeth);
-	fclose(convindex);
+	fclose(convlog);
 	free_string(conv->name);
 	free(conv);
 }
