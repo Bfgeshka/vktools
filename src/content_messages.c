@@ -213,14 +213,23 @@ S_CT_single_conversation ( account * acc, conversation * conv )
 		if ( err_ret < 0 )
 			goto S_CT_single_conversation_cleanup;
 
+		json_t * convjs_arr = json_object_get( json, "conversations" );
+		json_t * profiles = json_object_get( json, "profiles" );
+		json_t * groups = json_object_get( json, "groups" );
+
 		if ( offset == 0 )
 		{
 			posts_count = js_get_int( json, "count" );
 			printf( "Messages in conversation: %lld.\n", posts_count );
 
+			if ( conv->type == e_ct_null )
+			{
+				fprintf( stderr, "Error: null conversation.");
+				return;
+			}
+
 			if ( conv->type == e_ct_chat )
 			{
-				json_t * convjs_arr = json_object_get( json, "conversations" );
 				json_t * conver_meta = json_array_get( convjs_arr, 0 );
 				json_t * chat_settings = json_object_get( conver_meta, "chat_settings" );
 				stringset( conv->name, "%s", js_get_str( chat_settings, "title" ) );
@@ -228,7 +237,6 @@ S_CT_single_conversation ( account * acc, conversation * conv )
 
 			if ( conv->type == e_ct_user )
 			{
-				json_t * profiles = json_object_get( json, "profiles" );
 				size_t profsize = json_array_size(profiles);
 				for ( size_t i = 0; i < profsize; ++i )
 				{
@@ -242,17 +250,13 @@ S_CT_single_conversation ( account * acc, conversation * conv )
 
 			if ( conv->type == e_ct_group )
 			{
-				json_t * groups = json_object_get( json, "groups" );
 				size_t groupsize = json_array_size(groups);
 				for ( size_t i = 0; i < groupsize; ++i )
 				{
 					json_t * el = json_array_get( groups, i );
 					if ( conv->localid == js_get_int( el, "id" ) )
-					{
 						stringset( conv->name, "%s", js_get_str( el, "name" ) );
-					}
 				}
-
 			}
 
 			printf( "Conversation with %s, id: %lld, localid: %lld, type: %d\n", conv->name->s, conv->id, conv->localid, conv->type );
