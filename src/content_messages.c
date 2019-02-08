@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #define FILENAME_STARS "stars.txt"
+#define FILENAME_CONV_INDEX "conversations.txt"
 #define DIRNAME_STARS "alb_stars"
 // Limitation for number of messages per request. Current is 200
 #define LIMIT_M 200
@@ -51,7 +52,7 @@ static conversator * S_CT_find_conversator ( long long id );
 static conversation * S_CT_find_conversation ( long long id );
 static void S_CT_single_star ( account * acc, json_t * el, FILE * log, int nested );
 static void S_CT_remove_star ( long long id );
-static void S_CT_single_conversation ( account * acc, conversation * conv );
+static void S_CT_single_conversation ( account * acc, conversation * conv, FILE * log );
 
 static void
 S_CT_remove_star ( long long id )
@@ -196,7 +197,7 @@ S_CT_get_conversators ( json_t * json )
 }
 
 static void
-S_CT_single_conversation ( account * acc, conversation * conv )
+S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 {
 	(void)acc;
 
@@ -242,9 +243,7 @@ S_CT_single_conversation ( account * acc, conversation * conv )
 				{
 					json_t * el = json_array_get( profiles, i );
 					if ( conv->id == js_get_int( el, "id" ) )
-					{
 						stringset( conv->name, "%s %s", js_get_str( el, "first_name" ), js_get_str( el, "last_name" ) );
-					}
 				}
 			}
 
@@ -260,6 +259,7 @@ S_CT_single_conversation ( account * acc, conversation * conv )
 			}
 
 			printf( "Conversation with %s, id: %lld, localid: %lld, type: %d\n", conv->name->s, conv->id, conv->localid, conv->type );
+			fprintf( log, "%lld: %s; count: %lld\n", conv->id, conv->name->s, posts_count );
 			return;
 		}
 
@@ -277,6 +277,11 @@ void
 CT_get_conversations_history ( account * acc )
 {
 	string * apimeth = construct_string(128);
+
+	string * indexpath = construct_string(2048);
+	stringset( indexpath, "%s/%s", acc->directory->s, FILENAME_CONV_INDEX );
+	FILE * convindex = fopen( indexpath->s, "w" );
+	free_string(indexpath);
 
 	long long offset = 0;
 	long long posts_count = 0;
@@ -314,7 +319,7 @@ CT_get_conversations_history ( account * acc )
 			if ( strncmp( type, "gr", 2 ) == 0 )
 				conv->type = e_ct_group;
 
-			S_CT_single_conversation( acc, conv );
+			S_CT_single_conversation( acc, conv, convindex );
 
 			free(conv);
 		}
@@ -326,6 +331,7 @@ CT_get_conversations_history ( account * acc )
 
 	CT_get_conversations_history_cleanup:
 	free_string(apimeth);
+	fclose(convindex);
 }
 
 void
