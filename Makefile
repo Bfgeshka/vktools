@@ -11,7 +11,7 @@ PREFIX = /usr/local
 CFLAGS = -O2 -g -Wall -Wextra -Wpedantic --std=c99 -D_DEFAULT_SOURCE -I./include
 LDFLAGS := $(shell pkg-config --libs jansson libcurl)
 
-all: clean options ${NAMEGRAB} ${NAMEOWNERDUMP}
+all: clean options config ${NAMEGRAB} ${NAMEOWNERDUMP}
 
 options:
 	@echo "CFLAGS   = ${CFLAGS}"
@@ -19,12 +19,13 @@ options:
 	@echo "CC       = ${CC}"
 
 ${NAMEGRAB}:
-	cp -n config.def.h config.h
 	${CC} ${SRC_COMMON} ${SRC_GRAB} ${CFLAGS} ${LDFLAGS} -o ${NAMEGRAB}
 
 ${NAMEOWNERDUMP}:
-	cp -n config.def.h config.h
 	${CC} ${SRC_COMMON} ${SRC_OWNERDUMP} ${CFLAGS} ${LDFLAGS} -o ${NAMEOWNERDUMP}
+
+config:
+	cp -n config.def.h config.h
 
 clean:
 	rm -f ${NAMEGRAB}
