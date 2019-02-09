@@ -268,7 +268,12 @@ S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 
 			printf( "Conversation with %s, id: %lld, localid: %lld, type: %d\n", conv->name->s, conv->id, conv->localid, conv->type );
 			fprintf( log, "%lld: %s; count: %lld\n", conv->id, conv->name->s, posts_count );
-//			return;
+
+			if ( posts_count == 0 )
+			{
+				json_decref(json);
+				goto S_CT_single_conversation_cleanup;
+			}
 		}
 
 		size_t items_size = json_array_size(items);
@@ -414,6 +419,14 @@ CT_get_stars ( account * acc )
 		{
 			posts_count = js_get_int( js_messages_container, "count" );
 			printf( "Starred posts: %lld.\n", posts_count );
+
+			if ( posts_count == 0 )
+			{
+				json_decref(json);
+				S_CT_free_conversations();
+				S_CT_free_conversators();
+				goto CT_get_stars_cleanup;
+			}
 		}
 
 		printf( "Iteration %lld-%lld, people: %zu, dialogs: %zu, messages: %zu\n", offset, offset + LIMIT_M, Conversators_count, Conversations_count, messages_num );
