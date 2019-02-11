@@ -33,8 +33,10 @@ clean:
 
 install:
 	cp -i ${NAMEGRAB} ${PREFIX}/bin
+	cp -i ${NAMEOWNERDUMP} ${PREFIX}/bin
 
 uninstall:
 	rm -i ${PREFIX}/bin/${NAMEGRAB}
+	rm -i ${PREFIX}/bin/${NAMEOWNERDUMP}
 
 .PHONY: all install uninstall clean
