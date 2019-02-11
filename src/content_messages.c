@@ -26,9 +26,9 @@ typedef enum conversation_type
 
 typedef struct conversation_user
 {
+	enum conversation_type type;
 	long long id;
-	string * fname;
-	string * lname;
+	string * name;
 } conversator;
 
 typedef struct conversation_data
@@ -45,7 +45,7 @@ static size_t Conversators_count = 0;
 static conversation * Conversations = NULL;
 static size_t Conversations_count = 0;
 
-static void S_CT_get_conversators ( json_t * json );
+static void S_CT_get_conversators ( json_t * profiles, json_t * groups );
 static void S_CT_get_conversations ( json_t * json );
 static void S_CT_free_conversators ( void );
 static void S_CT_free_conversations ( void );
@@ -81,7 +81,7 @@ S_CT_single_star ( account * acc, json_t * el, FILE * log, int nested )
 
 	conversator * author = S_CT_find_conversator( js_get_int(el, "from_id" ));
 	if ( author != NULL )
-		fprintf( log, "FROM: %s %s (%lld)\n", author->fname->s, author->lname->s, author->id );
+		fprintf( log, "FROM: %s (%lld)\n", author->name->s, author->id );
 	else
 		fputs( "FROM: unknown source\n", log );
 
@@ -151,10 +151,7 @@ static void
 S_CT_free_conversators ( void )
 {
 	for ( size_t i = 0; i < Conversators_count; ++i )
-	{
-		free_string(Conversators[i].fname);
-		free_string(Conversators[i].lname);
-	}
+		free_string(Conversators[i].name);
 
 	free(Conversators);
 }
@@ -180,20 +177,53 @@ S_CT_get_conversations ( json_t * json )
 }
 
 static void
-S_CT_get_conversators ( json_t * json )
+S_CT_get_conversators ( json_t * profiles, json_t * groups )
 {
-	Conversators_count = json_array_size(json);
+	size_t profiles_count = 0;
+	size_t groups_count = 0;
+	size_t iter = 0;
+
+	if ( profiles != NULL )
+		profiles_count = json_array_size(profiles);
+
+	if ( groups != NULL )
+		groups_count = json_array_size(groups);
+
+//	printf( "pfs: %zu, grps: %zu\n", profiles_count, groups_count );
+
+	Conversators_count = profiles_count + groups_count;
 	Conversators = malloc( sizeof(conversator) * Conversators_count );
 
-	for ( size_t i = 0; i < Conversators_count; ++i )
+	if ( profiles != NULL )
 	{
-		json_t * el = json_array_get( json, i );
-		Conversators[i].id = js_get_int( el, "id" );
+		for ( size_t pi = 0; pi < profiles_count; ++pi )
+		{
+			Conversators[iter].type = e_ct_user;
 
-		Conversators[i].fname = construct_string(128);
-		stringset( Conversators[i].fname, "%s", js_get_str( el, "first_name" ) );
-		Conversators[i].lname = construct_string(128);
-		stringset( Conversators[i].lname, "%s", js_get_str( el, "last_name" ) );
+			json_t * el = json_array_get( profiles, pi );
+			Conversators[iter].id = js_get_int( el, "id" );
+
+			Conversators[iter].name = construct_string(128);
+			stringset( Conversators[iter].name, "%s %s", js_get_str( el, "first_name" ), js_get_str( el, "last_name" ) );
+
+			iter++;
+		}
+	}
+
+	if ( groups != NULL )
+	{
+		for ( size_t gi = 0; gi < groups_count; ++gi )
+		{
+			Conversators[iter].type = e_ct_group;
+
+			json_t * el = json_array_get( groups, gi );
+			Conversators[iter].id = js_get_int( el, "id" );
+
+			Conversators[iter].name = construct_string(128);
+			stringset( Conversators[iter].name, "%s", js_get_str( el, "name" ) );
+
+			iter++;
+		}
 	}
 }
 
@@ -222,8 +252,9 @@ S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 			goto S_CT_single_conversation_cleanup;
 
 		json_t * convjs_arr = json_object_get( json, "conversations" );
-		json_t * profiles = json_object_get( json, "profiles" );
-		json_t * groups = json_object_get( json, "groups" );
+		S_CT_get_conversators( json_object_get( json, "profiles" ), json_object_get( json, "groups" ) );
+//		json_t * profiles = json_object_get( json, "profiles" );
+//		json_t * groups = json_object_get( json, "groups" );
 		json_t * items = json_object_get( json, "items" );
 
 		if ( offset == 0 )
@@ -246,24 +277,28 @@ S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 
 			if ( conv->type == e_ct_user )
 			{
-				size_t profsize = json_array_size(profiles);
-				for ( size_t i = 0; i < profsize; ++i )
-				{
-					json_t * el = json_array_get( profiles, i );
-					if ( conv->id == js_get_int( el, "id" ) )
-						stringset( conv->name, "%s %s", js_get_str( el, "first_name" ), js_get_str( el, "last_name" ) );
-				}
+				conversator * cvr = S_CT_find_conversator(conv->id);
+				stringset( conv->name, "%s", cvr->name );
+//				size_t profsize = json_array_size(profiles);
+//				for ( size_t i = 0; i < profsize; ++i )
+//				{
+//					json_t * el = json_array_get( profiles, i );
+//					if ( conv->id == js_get_int( el, "id" ) )
+//						stringset( conv->name, "%s %s", js_get_str( el, "first_name" ), js_get_str( el, "last_name" ) );
+//				}
 			}
 
 			if ( conv->type == e_ct_group )
 			{
-				size_t groupsize = json_array_size(groups);
-				for ( size_t i = 0; i < groupsize; ++i )
-				{
-					json_t * el = json_array_get( groups, i );
-					if ( conv->localid == js_get_int( el, "id" ) )
-						stringset( conv->name, "%s", js_get_str( el, "name" ) );
-				}
+				conversator * cvr = S_CT_find_conversator(conv->localid);
+				stringset( conv->name, "%s", cvr->name );
+//				size_t groupsize = json_array_size(groups);
+//				for ( size_t i = 0; i < groupsize; ++i )
+//				{
+//					json_t * el = json_array_get( groups, i );
+//					if ( conv->localid == js_get_int( el, "id" ) )
+//						stringset( conv->name, "%s", js_get_str( el, "name" ) );
+//				}
 			}
 
 			printf( "Conversation with %s, id: %lld, localid: %lld, type: %d\n", conv->name->s, conv->id, conv->localid, conv->type );
@@ -291,7 +326,8 @@ S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 				OS_readable_date( epoch, convlog );
 
 			fprintf( convlog, "EPOCH: %lld\n", epoch );
-			fprintf( convlog, "FROM_ID: %lld\n", from );
+			conversator * cvr = S_CT_find_conversator(from);
+			fprintf( convlog, "FROM: %s (%lld)\n", cvr->name->s, from );
 
 			fprintf( convlog, "TEXT:\n%s\n", js_get_str( el, "text" ) );
 
@@ -408,7 +444,7 @@ CT_get_stars ( account * acc )
 		if ( err_ret < 0 )
 			goto CT_get_stars_cleanup;
 
-		S_CT_get_conversators(json_object_get( json, "profiles"));
+		S_CT_get_conversators( json_object_get( json, "profiles" ), NULL );
 		S_CT_get_conversations(json_object_get( json, "conversations" ));
 
 		json_t * js_messages_container = json_object_get( json, "messages" );
