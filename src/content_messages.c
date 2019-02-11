@@ -278,7 +278,7 @@ S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 			if ( conv->type == e_ct_user )
 			{
 				conversator * cvr = S_CT_find_conversator(conv->id);
-				stringset( conv->name, "%s", cvr->name );
+				stringset( conv->name, "%s", cvr->name->s );
 //				size_t profsize = json_array_size(profiles);
 //				for ( size_t i = 0; i < profsize; ++i )
 //				{
@@ -291,7 +291,7 @@ S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 			if ( conv->type == e_ct_group )
 			{
 				conversator * cvr = S_CT_find_conversator(conv->localid);
-				stringset( conv->name, "%s", cvr->name );
+				stringset( conv->name, "%s", cvr->name->s );
 //				size_t groupsize = json_array_size(groups);
 //				for ( size_t i = 0; i < groupsize; ++i )
 //				{
