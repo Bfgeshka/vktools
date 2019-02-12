@@ -85,6 +85,7 @@ C_fetch ( const char * url, struct curl_arg * fetch_str )
 		return CURLE_FAILED_INIT;
 	}
 
+	curl_easy_reset(Curl);
 	curl_easy_setopt( Curl, CURLOPT_URL, url );
 	curl_easy_setopt( Curl, CURLOPT_WRITEFUNCTION, C_callback );
 	curl_easy_setopt( Curl, CURLOPT_WRITEDATA, (void *)fetch_str );
@@ -127,6 +128,7 @@ progress_func ( void * ptr, double todl_total, double dl_ed, double undef_a, dou
 void
 C_init ( void )
 {
+	Curl = curl_easy_init();
 	clock_gettime( CLOCK_MONOTONIC, &deadline );
 }
 
@@ -142,24 +144,18 @@ C_finish ( void )
 void
 C_get_request( const char * url, struct curl_arg * cf )
 {
-	if ( Curl )
-		curl_easy_cleanup(Curl);
-
-	Curl = curl_easy_init();
 	if ( !Curl )
 	{
 		fprintf( stderr, "Curl initialisation error.\n" );
 		exit(EXIT_FAILURE);
 	}
 
-	CURLcode code;
-
 	/* struct initialiisation */
 	cf->size = 0;
 	cf->payload = malloc(1);
 
 	/* fetching an answer */
-	code = C_fetch( url, cf );
+	CURLcode code = C_fetch( url, cf );
 
 	/* checking result */
 	if ( code != CURLE_OK || cf->size < 1 )
@@ -171,10 +167,6 @@ C_get_request( const char * url, struct curl_arg * cf )
 size_t
 C_get_file ( const char * url, const char * filepath )
 {
-	if ( Curl )
-		curl_easy_cleanup(Curl);
-
-	Curl = curl_easy_init();
 	if ( !Curl )
 	{
 		fprintf( stderr, "Curl initialisation error.\n" );
@@ -208,6 +200,7 @@ C_get_file ( const char * url, const char * filepath )
 	{
 		fflush(stdout);
 		FILE * fw = fopen( TMP_CURL_FILENAME, "w" );
+		curl_easy_reset(Curl);
 		curl_easy_setopt( Curl, CURLOPT_URL, url );
 		curl_easy_setopt( Curl, CURLOPT_WRITEFUNCTION, OS_write_file );
 		curl_easy_setopt( Curl, CURLOPT_WRITEDATA, fw );
@@ -216,8 +209,7 @@ C_get_file ( const char * url, const char * filepath )
 		curl_easy_setopt( Curl, CURLOPT_MAXREDIRS, 2 );
 		curl_easy_setopt( Curl, CURLOPT_NOPROGRESS, 0 );
 		curl_easy_setopt( Curl, CURLOPT_PROGRESSFUNCTION, progress_func );
-		CURLcode code;
-		code = curl_easy_perform(Curl);
+		CURLcode code = curl_easy_perform(Curl);
 
 		if ( code != CURLE_OK )
 		{
