@@ -14,6 +14,7 @@ struct content
 	unsigned documents   : 1;
 	unsigned pictures    : 1;
 	unsigned videos      : 1;
+	unsigned audio       : 1;
 	unsigned comments    : 1;
 	unsigned clear_stars : 1;
 } content;
