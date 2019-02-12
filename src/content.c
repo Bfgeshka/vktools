@@ -11,8 +11,9 @@
 
 #define DEFAULT_CONTENT_DOCS 1
 #define DEFAULT_CONTENT_PICS 1
-#define DEFAULT_CONTENT_VIDS 0
+#define DEFAULT_CONTENT_VIDS 1
 #define DEFAULT_CONTENT_COMS 1
+#define DEFAULT_CONTENT_AUDS 1
 #define DEFAULT_CONTENT_REMOVESTARS 0
 #define FILENAME_POSTS "wall.txt"
 #define FILENAME_GROUPS "communities.txt"
@@ -108,7 +109,7 @@ CT_parse_attachments ( account * acc, json_t * input_json, FILE * logfile, long 
 
 	size_t att_index;
 	json_t * att_elem;
-	const char data_type[][6] = { "photo", "link", "doc", "video" };
+	const char data_type[][6] = { "photo", "link", "doc", "video", "audio" };
 
 	json_array_foreach( input_json, att_index, att_elem )
 	{
@@ -126,8 +127,8 @@ CT_parse_attachments ( account * acc, json_t * input_json, FILE * logfile, long 
 		if ( strcmp( att_type, data_type[1] ) == 0 )
 		{
 			output_json = json_object_get( att_elem, data_type[1] );
-			fprintf( logfile, "ATTACH: LINK_URL: %s\nATTACH: LINK_DSC: %s\n",
-			    js_get_str( output_json, "url" ), js_get_str( output_json, "description" ) );
+			fprintf( logfile, "ATTACH: LINK_URL: %s\n", js_get_str( output_json, "url" ) );
+			fprintf( logfile, "ATTACH: LINK_DSC: %s\n", js_get_str( output_json, "description" ) );
 		}
 
 		/* If doc: 2 */
@@ -135,6 +136,22 @@ CT_parse_attachments ( account * acc, json_t * input_json, FILE * logfile, long 
 		{
 			output_json = json_object_get( att_elem, data_type[2] );
 			DL_doc( acc, output_json, logfile, post_id, comm_id );
+		}
+
+		/* If video: 3 */
+		if ( content.videos == 1 && strcmp( att_type, data_type[3] ) == 0 )
+		{
+			output_json = json_object_get( att_elem, data_type[3] );
+			fprintf( logfile, "ATTACH: VIDEO TITLE: %s\n", js_get_str( output_json, "title" ) );
+		}
+
+		/* If audio: 4 */
+		if ( content.audio == 1 && strcmp( att_type, data_type[4] ) == 0 )
+		{
+			output_json = json_object_get( att_elem, data_type[4] );
+			fprintf( logfile, "ATTACH: AUDIO ARTIST: %s\n", js_get_str( output_json, "artist" ) );
+			fprintf( logfile, "ATTACH: AUDIO TITLE: %s\n", js_get_str( output_json, "title" ) );
+			fprintf( logfile, "ATTACH: AUDIO URL: %s\n", js_get_str( output_json, "url" ) );
 		}
 	}
 }
@@ -146,6 +163,7 @@ CT_default ( void )
 	content.documents = DEFAULT_CONTENT_DOCS;
 	content.pictures = DEFAULT_CONTENT_PICS;
 	content.videos = DEFAULT_CONTENT_VIDS;
+	content.audio = DEFAULT_CONTENT_AUDS;
 	content.clear_stars = DEFAULT_CONTENT_REMOVESTARS;
 }
 
@@ -166,7 +184,10 @@ CT_print_types ( void )
 		stringcat( str, " pictures" );
 
 	if ( content.videos )
-		stringcat( str, " videos" );
+		stringcat( str, " video_metadata" );
+
+	if ( content.audio )
+		stringcat( str, " audio_metadata" );
 
 	stringcat( str, ".\n");
 
@@ -177,7 +198,7 @@ CT_print_types ( void )
 void
 CT_get_albums ( account * acc )
 {
-	string * apimeth = construct_string(1024);
+	string * apimeth = construct_string(128);
 	stringset( apimeth, "photos.getAlbums?owner_id=%lld&need_system=1", acc->id );
 
 	if ( acc->id < 0 )
