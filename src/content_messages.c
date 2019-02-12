@@ -132,7 +132,7 @@ static conversator *
 S_CT_find_conversator ( long long id )
 {
 	for ( size_t i = 0; i < Conversators_count; ++i )
-		if ( id == Conversators[i].id )
+		if ( id == Conversators[i].id || id == - Conversators[i].id )
 			return &Conversators[i];
 
 	return NULL;
@@ -243,7 +243,7 @@ S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 	long long posts_count = 0;
 	do
 	{
-		stringset( apimeth, "messages.getHistory?count=%d&offset=%lld&extended=1&peer_id=%lld", LIMIT_M, offset, conv->id );
+		stringset( apimeth, "messages.getHistory?count=%d&offset=%lld&extended=1&peer_id=%lld&rev=1", LIMIT_M, offset, conv->id );
 		int err_ret = 0;
 		json_t * json = RQ_request( apimeth, &err_ret );
 		if ( err_ret < 0 )
@@ -261,7 +261,7 @@ S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 			if ( conv->type == e_ct_null )
 			{
 				fprintf( stderr, "Error: null conversation.");
-				return;
+				goto S_CT_single_conversation_cleanup;
 			}
 
 			if ( conv->type == e_ct_chat )
@@ -279,7 +279,8 @@ S_CT_single_conversation ( account * acc, conversation * conv, FILE * log )
 
 			if ( conv->type == e_ct_group )
 			{
-				conversator * cvr = S_CT_find_conversator(conv->localid);
+				conversator * cvr = S_CT_find_conversator(conv->id);
+				printf( "ID: %lld\n", conv->id );
 				stringset( conv->name, "%s", cvr->name->s );
 			}
 
