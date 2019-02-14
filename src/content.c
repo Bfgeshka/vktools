@@ -461,7 +461,7 @@ CT_get_albums_files ( account * acc )
 				    i + 1,
 				    acc->albums_count,
 				    acc->albums[i].size,
-				    acc->albums[i].title );
+				    acc->albums[i].title->s );
 				break;
 		}
 
